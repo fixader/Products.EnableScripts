@@ -42,6 +42,7 @@ def main(mode):
     elif mode == "bytesio":
         activate(("bytesio",))
         assert run("from io import BytesIO\nb = BytesIO()\nb.write(b'abc')\nb.seek(0)\nreturn (b.read(), b.getvalue(), b.tell())") == (b"abc", b"abc", 3)
+        assert run("from io import BytesIO\nb=BytesIO(b'abc')\nv=b.getbuffer()\nresult=(v.nbytes,v.tobytes())\nv.release()\nreturn result") == (3,b"abc")
         denied("from io import open\nreturn open")
         denied("from io import FileIO\nreturn FileIO")
     elif mode == "granular":

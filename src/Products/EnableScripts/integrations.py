@@ -10,7 +10,10 @@ def names(text):
 register(Feature(
     "bytesio", "io.BytesIO", "Binary streams in memory: read, write, seek and getvalue.",
     modules={"io": ("BytesIO",)},
-    types={"io:BytesIO": names("read read1 readinto readinto1 readline readlines write writelines seek tell truncate flush getvalue close closed readable writable seekable")},
+    types={
+        "io:BytesIO": names("read read1 readinto readinto1 readline readlines write writelines seek tell truncate flush getvalue getbuffer close closed readable writable seekable detach fileno isatty"),
+        "builtins:memoryview": names("nbytes readonly format ndim itemsize shape strides contiguous c_contiguous f_contiguous tobytes tolist hex release cast toreadonly"),
+    },
 ))
 
 register(Feature(
