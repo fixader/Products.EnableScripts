@@ -1,0 +1,191 @@
+"""Manager-only ZMI control panel with persistent, granular selections."""
+
+from html import escape
+from importlib import metadata
+
+from AccessControl import ClassSecurityInfo, getSecurityManager
+from AccessControl.class_init import InitializeClass
+from App.ApplicationManager import ApplicationManager
+from OFS.SimpleItem import SimpleItem
+from zExceptions import BadRequest, Forbidden, Unauthorized
+
+try:
+    from ZPublisher import zpublish
+except ImportError:  # Zope 5 uses docstring-based publishing.
+    def zpublish(value):
+        return value
+
+from . import runtime
+from .policy import choices, member_key, object_key, symbol_key
+from .registry import FEATURES, availability, expand
+from .settings import get_settings
+
+
+def _items(value):
+    return (value,) if isinstance(value, str) else tuple(value or ())
+
+
+def _checkbox(name, value, label, checked=True, disabled=False):
+    attributes = (' checked' if checked else '') + (' disabled' if disabled else '')
+    return (f'<label><input type="checkbox" name="{escape(name)}:list" '
+            f'value="{escape(value, quote=True)}"{attributes}> {escape(label)}</label>')
+
+
+class EnableScriptsPanel(SimpleItem):
+    """Configure process-wide library access for restricted Zope scripts."""
+
+    id = "EnableScripts"
+    title = "EnableScripts"
+    meta_type = "EnableScripts settings"
+    __roles__ = ("Manager",)
+    security = ClassSecurityInfo()
+    security.declareObjectProtected("Manage properties")
+    manage_options = ({"label": "EnableScripts", "action": "manage_main"},)
+
+    def _require_manager(self):
+        app = self.getPhysicalRoot()
+        user = getSecurityManager().getUser()
+        if "Manager" not in user.getRolesInContext(app):
+            raise Unauthorized("Only a root Manager can configure EnableScripts")
+        return app, user.getId() or user.getUserName()
+
+    @zpublish
+    @security.protected("Manage properties")
+    def manage_main(self, REQUEST=None, saved=False):
+        """Display installed integrations and the policy for the next restart."""
+        app, user_id = self._require_manager()
+        settings = get_settings(app, create=True)
+        enabled = set(settings.enabled)
+        disabled = set(settings.disabled)
+        pending = runtime.SNAPSHOT != runtime.snapshot(enabled, disabled)
+        content = [self._header()]
+        content.append('<aside class="warning"><strong>RestrictedPython er begrenset av en grunn.</strong> '
+                       'Aktivering utvider tilgangen for restricted scripts i hele Zope-prosessen. '
+                       'Bibliotekene kan gi tilgang til filer, nettverk og serverressurser. '
+                       'Bruk dette bare når du stoler på scriptforfatterne. Avkryssingene er ikke en sandkasse.</aside>')
+        if saved:
+            content.append('<p class="notice">Valgene er lagret i ZODB.</p>')
+        if pending:
+            content.append('<p class="notice">Omstart kreves. Start alle Zope-prosesser på nytt for å ta i bruk valgene.</p>')
+        content.append(f'<p>Status gjelder prosess <strong>{runtime.PROCESS_ID}</strong>. '
+                       'Valgene gjelder hele Zope-prosessen, også andre nettsteder i samme prosess.</p>')
+        content.append('<p>Hovedvalget aktiverer biblioteket. Alle underpunkter er på som standard; '
+                       'fold ut for å begrense importer, objekter og metoder. '
+                       'Avhengigheter som BytesIO aktiveres automatisk ved lagring.</p>')
+        content.append('<form method="post" action="manage_save">')
+        content.append(f'<input type="hidden" name="token" value="{settings.token(user_id)}">')
+        for key, feature in FEATURES.items():
+            available, reason = availability(feature)
+            selected = key in enabled
+            active = key in runtime.ACTIVE
+            status = "Aktiv" if active else "Ikke aktiv"
+            if key in runtime.ERRORS:
+                status = "Kunne ikke aktiveres: " + runtime.ERRORS[key]
+            content.append('<section class="feature">')
+            content.append('<div class="feature-title">' + _checkbox(
+                "enabled", key, feature.title, selected, not available and not selected))
+            content.append(f'<span class="status">{escape(status)}</span></div>')
+            content.append(f'<p>{escape(feature.description)}</p>')
+            content.append(f'<p class="availability">{escape(reason)}</p>')
+            if feature.requires:
+                content.append('<p class="dependencies">Avhengigheter: ' + escape(
+                    ", ".join(FEATURES[k].title for k in feature.requires)) + '</p>')
+            content.append(f'<details><summary>Importer, objekter og metoder ({len(choices(feature))} valg)</summary>')
+            for module, names in feature.modules.items():
+                content.append(f'<div class="module"><h3>{escape(module)}</h3><div class="choices">')
+                for name in names:
+                    choice = symbol_key(module, name)
+                    content.append(_checkbox("details", choice, name, choice not in disabled))
+                content.append('</div></div>')
+            if feature.exports:
+                content.append('<h3>Egne hjelpere: Products.EnableScripts</h3><div class="choices">')
+                for name in feature.exports:
+                    choice = symbol_key("Products.EnableScripts", name)
+                    content.append(_checkbox("details", choice, name, choice not in disabled))
+                content.append('</div>')
+            for path, names in {**feature.classes, **feature.types}.items():
+                choice = object_key(path)
+                content.append('<div class="object">' + _checkbox(
+                    "details", choice, path.replace(":", "."), choice not in disabled))
+                content.append('<p class="hint">Tilgang til objektet og dets metoder/attributter. '
+                               'Gjelder også objekter som returneres av andre kall.</p><div class="choices">')
+                for name in names:
+                    choice = member_key(path, name)
+                    content.append(_checkbox("details", choice, name, choice not in disabled))
+                content.append('</div></div>')
+            content.append('</details></section>')
+        content.append('<button type="submit">Lagre valg</button></form>')
+        content.append('<p>Direkte bibliotektilgang lar scriptforfattere bruke bibliotekets funksjoner, '
+                       'inkludert filstier der biblioteket støtter det. '
+                       'EnableScripts kan ikke oppheve tilgang gitt av andre produkter. '
+                       'Fjern gamle GlobalModule/GlobalModules-aktiveringer før overgang.</p>')
+        installed = sorted({(d.metadata.get("Name", "?"), d.version) for d in metadata.distributions()})
+        content.append('<details class="inventory"><summary>Installerte Python-pakker</summary>'
+                       '<p>Kun oppdagelse. Nye biblioteker trenger en integrasjon før de får avkryssinger.</p>'
+                       '<ul>')
+        content.extend(f'<li>{escape(name)} {escape(version)}</li>' for name, version in installed)
+        content.append('</ul></details></main></body></html>')
+        if REQUEST is not None:
+            REQUEST.RESPONSE.setHeader("Content-Type", "text/html; charset=utf-8")
+            REQUEST.RESPONSE.setHeader("Cache-Control", "no-store")
+        return "\n".join(content)
+
+    @zpublish
+    @security.protected("Manage properties")
+    def manage_save(self, REQUEST, token="", enabled=(), details=()):
+        """Persist selections. Assertions are not changed by this request."""
+        app, user_id = self._require_manager()
+        if REQUEST.get("REQUEST_METHOD") != "POST":
+            raise Forbidden("Use POST to save settings")
+        settings = get_settings(app)
+        if settings is None or not settings.validate_token(user_id, token):
+            raise Forbidden("Invalid or stale form. Reload EnableScripts and try again.")
+        all_choices = set().union(*(choices(feature) for feature in FEATURES.values()))
+        checked = set(_items(details))
+        if not checked <= all_choices:
+            raise BadRequest("Unknown detail selection")
+        try:
+            selected = expand(_items(enabled))
+        except ValueError as exc:
+            raise BadRequest(str(exc)) from exc
+        for key in selected:
+            available, reason = availability(FEATURES[key])
+            if not available and key not in settings.enabled:
+                raise BadRequest(f"{FEATURES[key].title}: {reason}")
+        settings.enabled = tuple(selected)
+        settings.disabled = tuple(sorted(all_choices - checked))
+        settings.revision += 1
+        # ZPublisher commits the request transaction; no manual commit and no
+        # process-local grants here, so aborted requests cannot leak access.
+        return REQUEST.RESPONSE.redirect(self.absolute_url() + "/manage_main?saved=1", status=303)
+
+    def _header(self):
+        return '''<!doctype html><html lang="nb"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>EnableScripts</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;background:#f4f6f8;color:#24313f;margin:0}
+main{max-width:1050px;margin:28px auto;padding:0 24px 40px}a{color:#245da2}
+h1{margin-bottom:4px}h3{font-size:14px;margin:16px 0 7px;overflow-wrap:anywhere}
+.feature{background:white;border:1px solid #d3dce5;border-radius:8px;padding:18px;margin:15px 0}
+.feature-title{display:flex;gap:20px;align-items:center;justify-content:space-between;font-weight:650;font-size:18px}
+.status{font-size:13px;color:#526378}.availability,.dependencies,.hint{color:#526378;font-size:13px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:7px 12px;padding:5px 0 12px 22px}
+.choices label{overflow-wrap:anywhere}.object{border-top:1px solid #e4e9ee;padding-top:12px;margin-top:12px}
+.object>label{font-weight:600;overflow-wrap:anywhere}input{accent-color:#245da2}summary{cursor:pointer;font-weight:600}
+.notice{padding:14px;background:#fff1c9;border-left:4px solid #ae7c00}button{background:#245da2;color:white;border:0;border-radius:5px;padding:12px 22px;font:inherit;cursor:pointer}
+.warning{padding:16px;background:#fff2ef;border:1px solid #e5aca0;border-radius:6px;margin:18px 0}.warning strong{display:block;margin-bottom:5px}
+.inventory{margin-top:25px}.inventory ul{columns:2}.hint{margin:4px 0 8px 22px}
+</style></head><body><main><a href="../manage_main">← Zope Control Panel</a>
+<h1>EnableScripts</h1><p>Biblioteker for Script (Python)</p>'''
+
+
+InitializeClass(EnableScriptsPanel)
+
+
+def install_panel():
+    """Zope 5's Control Panel replaces the old persistent Products UI."""
+    if not hasattr(ApplicationManager, "EnableScripts"):
+        ApplicationManager.EnableScripts = EnableScriptsPanel()
+    action = "EnableScripts/manage_main"
+    if not any(item.get("action") == action for item in ApplicationManager.manage_options):
+        ApplicationManager.manage_options += ({"label": "EnableScripts", "action": action},)

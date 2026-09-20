@@ -1,0 +1,2 @@
+# Zope 5.14.2/6.1 define class-factory themselves; ZODB 6.3 duplicates it.
+ZODB<6.3

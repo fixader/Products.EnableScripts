@@ -1,0 +1,5 @@
+include README.md README.en.md SECURITY.md LICENSE RELEASING.md CHANGELOG.md
+recursive-include tests *.py
+recursive-include examples *.py
+recursive-include constraints *.txt
+recursive-include tools *.py

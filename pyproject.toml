@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Products.EnableScripts"
+version = "0.1.0"
+description = "Opt-in, granular library access for Zope restricted Python scripts."
+readme = "README.en.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "fixader"}]
+keywords = ["Zope", "RestrictedPython", "ReportLab", "Pillow", "ZMI"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Zope",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["Zope>=5.8,<7", "Products.PythonScripts>=5,<6"]
+
+[project.urls]
+Homepage = "https://github.com/fixader/Products.EnableScripts"
+Repository = "https://github.com/fixader/Products.EnableScripts"
+Issues = "https://github.com/fixader/Products.EnableScripts/issues"
+
+[project.optional-dependencies]
+pillow = ["Pillow>=10"]
+reportlab = ["reportlab>=4,<6"]
+all = ["Pillow>=10", "reportlab>=4,<6"]
+test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "hubarcode==1.0.0", "zxing-cpp"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["Products.EnableScripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
