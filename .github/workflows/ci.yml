@@ -17,16 +17,19 @@ jobs:
         include:
           - python: '3.11'
             zope: 'Zope==5.14.2'
+            constraints: constraints/tests.txt
           - python: '3.13'
             zope: 'Zope==6.1'
+            constraints: constraints/zope6.txt
           - python: '3.14'
             zope: 'Zope==6.1'
+            constraints: constraints/zope6.txt
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m pip install -c constraints/tests.txt -e '.[all,test]' '${{ matrix.zope }}'
+      - run: python -m pip install -c '${{ matrix.constraints }}' -e '.[all,test]' '${{ matrix.zope }}'
       - run: python -m pytest -q
       - run: python -m build
       - run: python -m twine check dist/*

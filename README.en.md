@@ -120,10 +120,10 @@ python -m build
 python -m twine check dist/*
 ```
 
-Use a Zope-compatible dependency set. The test constraints currently exclude
-ZODB 6.3 because its `class-factory` configuration key duplicates the key in
-Zope 5.14.2/6.1. This is an upstream combination issue, not an EnableScripts data
-format requirement.
+Use a Zope-compatible dependency set. Zope 5.14.2 tests use ZODB < 6.3 because
+the `class-factory` configuration key is defined by Zope itself. Zope 6.1 tests
+use ZODB >= 6.3, which supplies that key. Separate constraint files are provided
+for these upstream combinations; this is not an EnableScripts data format requirement.
 
 See [RELEASING.md](https://github.com/fixader/Products.EnableScripts/blob/main/RELEASING.md)
 for the manual PyPI Trusted Publishing workflow, and
