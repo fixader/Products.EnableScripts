@@ -85,7 +85,11 @@ def expand(keys):
 
 def load_extensions():
     """Trusted installed eggs may contribute a callable returning Features."""
-    for entry in sorted(metadata.entry_points(group="enablescripts.integrations"),
-                        key=lambda item: item.name):
+    entries = metadata.entry_points()
+    if hasattr(entries, "select"):
+        entries = entries.select(group="enablescripts.integrations")
+    else:  # Python 3.8/3.9 importlib.metadata returns a dictionary.
+        entries = entries.get("enablescripts.integrations", ())
+    for entry in sorted(entries, key=lambda item: item.name):
         for feature in entry.load()():
             register(feature)

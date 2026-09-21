@@ -3,8 +3,8 @@
 Granular, opt-in library access for **Zope 5 / 6 Script (Python)**, managed from
 the ZMI. Detect installed supported libraries, enable an integration, and expand
 its module choices. Each module lists its imports, objects, methods and attributes
-without separate checkboxes for every API member. Installation commands and
-Script (Python) import examples appear beside every module. ReportLab Canvas,
+without separate checkboxes for every API member. Installation commands appear once per library, with Script (Python) import
+examples beside each module. ReportLab Canvas,
 Platypus, barcodes and PDF helpers are grouped together.
 
 > **RestrictedPython is restricted for a reason.** This product intentionally
@@ -30,12 +30,19 @@ Libraries start **disabled**. Their individual subchoices default to enabled, so
 one checkbox enables the supported integration. Subchoices are remembered when
 the parent is disabled. Dependencies such as BytesIO are selected automatically.
 
+## Compatibility
+
+EnableScripts supports Python 3.8+ with Zope 5.8+ or Zope 6, using a Python
+version supported by the chosen Zope release. Supporting Python 3.8 does not
+mean that Zope 6 can run on it. The Python 3.8 test environment uses Zope 5.8.3
+and Pillow 10.4 with ReportLab below 4.4.3; newer environments continue to test Zope 5 and Zope 6.
+
 ## Install
 
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.1.1-py3-none-any.whl
+python -m pip install /path/to/products_enablescripts-0.1.2-py3-none-any.whl
 # Or, from a checkout, also installing Pillow and ReportLab:
 python -m pip install '.[all]'
 ```

@@ -2,6 +2,7 @@
 
 from html import escape
 from importlib import metadata
+import sys
 
 from AccessControl import ClassSecurityInfo, getSecurityManager
 from AccessControl.class_init import InitializeClass
@@ -71,6 +72,8 @@ class EnableScriptsPanel(SimpleItem):
                        'to see available objects and methods. Dependencies such as BytesIO are enabled automatically.</p>')
         content.append('<form method="post" action="manage_save">')
         content.append(f'<input type="hidden" name="token" value="{settings.token(user_id)}">')
+        reportlab_install = ('python -m pip install "reportlab>=4,<4.4.3"'
+                             if sys.version_info < (3, 9) else 'python -m pip install reportlab')
         pdf_keys = ("reportlab", "platypus", "barcodes", "pdf_helpers")
         ordered = sorted(FEATURES, key=lambda key: (
             1 if key in pdf_keys else 0 if key == "bytesio" else 2, list(FEATURES).index(key)))
@@ -79,7 +82,11 @@ class EnableScriptsPanel(SimpleItem):
             feature = FEATURES[key]
             is_reportlab = key in pdf_keys
             if is_reportlab and not reportlab_group:
-                content.append('<div class="library-group"><h2>ReportLab &amp; PDF</h2>')
+                content.append('<div class="library-group"><h2>ReportLab &amp; PDF</h2>'
+                               '<p>Install in Zope&#8217;s Python environment: '
+                               f'<code>{escape(reportlab_install)}</code><br>'
+                               'One package provides Canvas, Platypus and the ReportLab barcode modules. '
+                               'PDF helpers are included with EnableScripts.</p>')
                 reportlab_group = True
             elif reportlab_group and not is_reportlab:
                 content.append('</div>')
@@ -99,6 +106,20 @@ class EnableScriptsPanel(SimpleItem):
             if feature.requires:
                 content.append('<p class="dependencies">Requires: ' + escape(
                     ", ".join(FEATURES[k].title for k in feature.requires)) + '</p>')
+            if feature.distributions:
+                install = "python -m pip install " + " ".join(feature.distributions)
+            elif key == "hubarcode":
+                install = "python -m pip install hubarcode==1.0.0"
+            elif feature.exports:
+                install = "Included with Products.EnableScripts; no additional package needed."
+            else:
+                install = "Python standard library; no additional package needed."
+            if not is_reportlab:
+                content.append(f'<p class="installation">Install in Zope&#8217;s Python environment: '
+                               f'<code>{escape(install)}</code></p>')
+            if key == "hubarcode":
+                content.append('<p class="hint">Hubarcode 1.0.0 also needs the Python 3 DataMatrix compatibility repair '
+                               'described in the project README.</p>')
             for choice, (module, keys) in module_groups(feature).items():
                 excluded = keys & disabled
                 content.append('<div class="module">' + _checkbox(
@@ -106,14 +127,6 @@ class EnableScriptsPanel(SimpleItem):
                 if excluded and excluded != keys:
                     content.append('<p class="hint">Previously restricted individually. Left unchecked to preserve '
                                    'restrictions; checking this enables the whole listed API.</p>')
-                if feature.distributions:
-                    install = "python -m pip install " + " ".join(feature.distributions)
-                elif key == "hubarcode":
-                    install = "python -m pip install hubarcode==1.0.0"
-                elif module == "Products.EnableScripts":
-                    install = "Included with Products.EnableScripts; no additional package needed."
-                else:
-                    install = "Python standard library; no additional package needed."
                 names = tuple(feature.exports) if module == "Products.EnableScripts" else feature.modules.get(module, ())
                 preferred = {"io": "BytesIO" if key == "bytesio" else "StringIO",
                              "reportlab.pdfgen.canvas": "Canvas", "reportlab.lib.utils": "ImageReader",
@@ -133,11 +146,7 @@ class EnableScriptsPanel(SimpleItem):
                              "hubarcode.datamatrix": "DataMatrixEncoder"}
                 example = preferred.get(module, next(iter(names), None))
                 statement = f"from {module} import {example}" if example else f"import {module}"
-                content.append(f'<p class="hint">Install in Zope&#8217;s Python environment: <code>{escape(install)}</code><br>'
-                               f'Import in Script (Python): <code>{escape(statement)}</code></p>')
-                if key == "hubarcode":
-                    content.append('<p class="hint">Hubarcode 1.0.0 also needs the Python 3 DataMatrix compatibility repair '
-                                   'described in the project README.</p>')
+                content.append(f'<p class="hint">Import in Script (Python): <code>{escape(statement)}</code></p>')
                 content.append('<details class="includes"><summary>Includes</summary>')
                 content.append('<p>' + escape(", ".join(names) or "Package namespace") + '</p>')
                 for path, members in {**feature.classes, **feature.types}.items():

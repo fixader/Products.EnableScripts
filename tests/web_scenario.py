@@ -73,7 +73,7 @@ debug-exceptions off
     assert {i["value"] for i in pdf_group.select('input[name="enabled:list"]')} == {
         "reportlab", "platypus", "barcodes", "pdf_helpers"}
     assert "from reportlab.pdfgen.canvas import Canvas" in page.text
-    assert "python -m pip install reportlab" in page.text
+    assert pdf_group.get_text().count("python -m pip install") == 1
     if phase == "initial":
         assert not runtime.ACTIVE
         expect_http_error(lambda: app.get(save_path, headers=headers, expect_errors=True), 403, Forbidden)

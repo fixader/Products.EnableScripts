@@ -1,15 +1,14 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "Products.EnableScripts"
-version = "0.1.1"
+version = "0.1.2"
 description = "Opt-in, granular library access for Zope restricted Python scripts."
 readme = "README.en.md"
-requires-python = ">=3.10"
-license = "MIT"
-license-files = ["LICENSE"]
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
 authors = [{name = "fixader"}]
 keywords = ["Zope", "RestrictedPython", "ReportLab", "Pillow", "ZMI"]
 classifiers = [
@@ -17,6 +16,8 @@ classifiers = [
     "Framework :: Zope",
     "Intended Audience :: System Administrators",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -33,9 +34,9 @@ Issues = "https://github.com/fixader/Products.EnableScripts/issues"
 
 [project.optional-dependencies]
 pillow = ["Pillow>=10"]
-reportlab = ["reportlab>=4,<6"]
-all = ["Pillow>=10", "reportlab>=4,<6"]
-test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "hubarcode==1.0.0", "zxing-cpp"]
+reportlab = ["reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'"]
+all = ["Pillow>=10", "reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'"]
+test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "hubarcode==1.0.0", "zxing-cpp; python_version >= '3.9'"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
