@@ -18,33 +18,36 @@ SNAPSHOT = None
 PROCESS_ID = os.getpid()
 
 
-def snapshot(enabled, disabled):
-    return tuple(sorted(expand(enabled))), tuple(sorted(disabled))
+def snapshot(enabled, disabled, custom=(), custom_enabled=()):
+    return (tuple(sorted(expand(enabled))), tuple(sorted(disabled)),
+            tuple(custom), tuple(sorted(custom_enabled)))
 
 
-def activate(enabled=(), disabled=()):
+def activate(enabled=(), disabled=(), custom=(), custom_enabled=()):
     """Repeated identical initialization is harmless; live changes are refused."""
     global SNAPSHOT
-    current = snapshot(enabled, disabled)
+    from .custom import features as custom_features
+    features = dict(FEATURES, **custom_features(custom))
+    current = snapshot(enabled, disabled, custom, custom_enabled)
     if SNAPSHOT is not None:
         if current != SNAPSHOT:
             raise RuntimeError("EnableScripts policy changed; restart this Zope process")
         return
     disabled = set(disabled)
-    for feature in FEATURES.values():
+    for feature in features.values():
         for key, (_, keys) in module_groups(feature).items():
             if key in disabled:
                 disabled.update(keys)
     denied_objects = []
-    for feature in FEATURES.values():
+    for feature in features.values():
         for path in tuple(feature.classes) + tuple(feature.types):
             if object_key(path) in disabled:
                 try:
                     denied_objects.append(resolve(path))
                 except (ImportError, AttributeError):
                     pass
-    for key in expand(enabled):
-        feature = FEATURES[key]
+    for key in expand(tuple(enabled) + tuple("custom:" + name for name in custom_enabled), features):
+        feature = features[key]
         blocked = set(feature.requires) - ACTIVE
         available, reason = availability(feature)
         if blocked or not available:

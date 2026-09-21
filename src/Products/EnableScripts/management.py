@@ -58,7 +58,8 @@ class EnableScriptsPanel(SimpleItem):
         settings = get_settings(app, create=True)
         enabled = set(settings.enabled)
         disabled = set(settings.disabled)
-        pending = runtime.SNAPSHOT != runtime.snapshot(enabled, disabled)
+        pending = runtime.SNAPSHOT != runtime.snapshot(enabled, disabled, getattr(settings, "custom", ()),
+                                                       getattr(settings, "custom_enabled", ()))
         content = [self._header()]
         content.append('<aside class="warning"><strong>RestrictedPython is restricted for a reason.</strong> '
                        'Libraries may access files, networks and server resources. Enable them only for trusted '
@@ -161,9 +162,10 @@ class EnableScriptsPanel(SimpleItem):
         content.append('<p>Library access includes filesystem paths where supported. '
                        'EnableScripts cannot revoke access granted by other products. '
                        'Remove old GlobalModule/GlobalModules grants when migrating.</p>')
+        content.append(self._advanced(settings, user_id))
         installed = sorted({(d.metadata.get("Name", "?"), d.version) for d in metadata.distributions()})
         content.append('<details class="inventory"><summary>Installed Python packages</summary>'
-                       '<p>Discovery only. Additional libraries need an integration before they can be enabled.</p>'
+                       '<p>Use Advanced custom libraries to configure modules from additional installed packages.</p>'
                        '<ul>')
         content.extend(f'<li>{escape(name)} {escape(version)}</li>' for name, version in installed)
         content.append('</ul></details></main></body></html>')
@@ -201,6 +203,124 @@ class EnableScriptsPanel(SimpleItem):
         # ZPublisher commits the request transaction; no manual commit and no
         # process-local grants here, so aborted requests cannot leak access.
         return REQUEST.RESPONSE.redirect(self.absolute_url() + "/manage_main?saved=1", status=303)
+
+    def _advanced(self, settings, user_id):
+        from .custom import rules_text
+        token = escape(settings.token(user_id), quote=True)
+        content = ['<section class="feature" id="advanced"><h2>Advanced: custom libraries</h2>'
+                   '<p>Expose modules from installed packages or the Python standard library. '
+                   'Inspection imports the module as ordinary server code and may have side effects. '
+                   'Only inspect libraries you trust. No packages are installed here.</p>'
+                   '<p>Exports are saved explicitly: new exports after library upgrades are not automatically allowed. '
+                   'Returned objects may need class rules. Custom class rules cover exact types, not arbitrary subclasses. '
+                   'Overlapping grants from other modules or products can still provide access.</p>']
+        for record in getattr(settings, 'custom', ()):
+            name, exports, classes = record
+            enabled = name in getattr(settings, 'custom_enabled', ())
+            active = 'custom:' + name in runtime.ACTIVE
+            content.append('<div class="module"><h3>' + escape(name) + '</h3><p>' +
+                           ('Active in this process' if active else 'Inactive in this process') + '</p>')
+            error = runtime.ERRORS.get('custom:' + name)
+            if error:
+                content.append('<p class="notice">' + escape(error) + '</p>')
+            content.append(f'<p>Import: <code>from {escape(name)} import {escape(exports[0])}</code></p>')
+            content.append('<details><summary>Saved exports and object rules</summary><p>' +
+                           escape(', '.join(exports)) + '</p><pre>' + escape(rules_text(record)) + '</pre></details>')
+            content.append(f'<form method="post" action="manage_custom"><input type="hidden" name="token" value="{token}">'
+                           f'<input type="hidden" name="module" value="{escape(name, quote=True)}">'
+                           + _checkbox('custom_on', name, 'Enable this module after restart', enabled) +
+                           '<p><button name="action" value="toggle">Save activation</button> '
+                           '<button name="action" value="remove">Remove custom policy</button></p></form>')
+            content.append(f'<form method="post" action="manage_inspect"><input type="hidden" name="token" value="{token}">'
+                           f'<input type="hidden" name="module" value="{escape(name, quote=True)}">'
+                           '<button type="submit">Inspect / edit policy</button></form></div>')
+        content.append(f'<form method="post" action="manage_inspect"><input type="hidden" name="token" value="{token}">'
+                       '<p><label>Module to inspect <input name="module" required placeholder="decimal"></label></p>'
+                       '<button type="submit">Inspect module</button></form></section>')
+        return '\n'.join(content)
+
+    def _custom_request(self, REQUEST, token):
+        app, user_id = self._require_manager()
+        if REQUEST.get('REQUEST_METHOD') != 'POST':
+            raise Forbidden('Use POST for custom library changes or inspection')
+        settings = get_settings(app)
+        if settings is None or not settings.validate_token(user_id, token):
+            raise Forbidden('Invalid or stale form. Reload EnableScripts and try again.')
+        return settings, user_id
+
+    @zpublish
+    @security.protected('Manage properties')
+    def manage_inspect(self, REQUEST, token='', module=''):
+        """Inspect installed module exports without granting script access."""
+        from .custom import class_catalog, inspect_module, rules_text
+        settings, user_id = self._custom_request(REQUEST, token)
+        module = module.strip()
+        try:
+            names = inspect_module(module)
+        except Exception as exc:
+            raise BadRequest('Cannot inspect module: ' + str(exc)) from exc
+        catalog = ''.join('<p><strong>' + escape(path) + '</strong>: ' + escape(', '.join(members)) + '</p>'
+                          for path, members in class_catalog(module))
+        previous = next((r for r in getattr(settings, 'custom', ()) if r[0] == module), None)
+        exports = previous[1] if previous else names
+        rules = rules_text(previous) if previous else ''
+        enabled = module in getattr(settings, 'custom_enabled', ())
+        REQUEST.RESPONSE.setHeader('Content-Type', 'text/html; charset=utf-8')
+        REQUEST.RESPONSE.setHeader('Cache-Control', 'no-store')
+        return self._header() + f'''
+<h2>Inspect custom module: {escape(module)}</h2>
+<p>No script permissions have changed. Review the exports and optional class rules before saving.</p>
+<p><strong>Custom libraries are untested integrations.</strong> Public functions can access files, networks,
+processes and other server resources. Allow only APIs intended for trusted script authors.</p>
+<details><summary>Detected public exports ({len(names)})</summary><p>{escape(', '.join(names))}</p></details>
+<details><summary>Detected classes and public members</summary>{catalog or "<p>No classes exported by this module.</p>"}</details>
+<form method="post" action="manage_custom">
+<input type="hidden" name="token" value="{escape(settings.token(user_id), quote=True)}">
+<input type="hidden" name="module" value="{escape(module, quote=True)}">
+<input type="hidden" name="action" value="save">
+<p><label>Allowed exports (space or comma separated)<br>
+<textarea name="exports" rows="8" style="width:100%">{escape(' '.join(exports))}</textarea></label></p>
+<p><label>Optional object rules (one class per line)<br>
+<textarea name="rules" rows="5" style="width:100%" placeholder="decimal:Decimal = quantize as_tuple">{escape(rules)}</textarea></label></p>
+<p>Format: <code>module:Class = method attribute</code>. Instance attributes may be listed explicitly.
+No wildcards or private names. Classes already managed by a preset must be configured there.</p>
+{_checkbox('custom_on', module, 'Enable this module after restart', enabled)}
+<p><button type="submit">Save custom policy</button> <a href="manage_main#advanced">Cancel</a></p>
+</form></main></body></html>'''
+
+    @zpublish
+    @security.protected('Manage properties')
+    def manage_custom(self, REQUEST, token='', module='', action='', exports='', rules='', custom_on=()):
+        """Save custom policy; security declarations only change at restart."""
+        from .custom import validate
+        settings, user_id = self._custom_request(REQUEST, token)
+        records = {record[0]: record for record in getattr(settings, 'custom', ())}
+        enabled = set(getattr(settings, 'custom_enabled', ()))
+        if action == 'save':
+            try:
+                record = validate(module, exports, rules)
+                # Two custom entries must not overwrite each other's exact-type policy.
+                other_paths = {path for name, entry in records.items() if name != module
+                               for path, members in entry[2]}
+                from .registry import resolve
+                if any(resolve(path) is resolve(other) for path, members in record[2] for other in other_paths):
+                    raise ValueError('This class already has rules in another custom policy.')
+            except Exception as exc:
+                raise BadRequest('Invalid custom policy: ' + str(exc)) from exc
+            records[module] = record
+        elif action not in ('toggle', 'remove') or module not in records:
+            raise BadRequest('Unknown custom policy or action')
+        if action == 'remove':
+            del records[module]
+            enabled.discard(module)
+        elif module in _items(custom_on):
+            enabled.add(module)
+        else:
+            enabled.discard(module)
+        settings.custom = tuple(records[key] for key in sorted(records))
+        settings.custom_enabled = tuple(sorted(enabled))
+        settings.revision += 1
+        return REQUEST.RESPONSE.redirect(self.absolute_url() + '/manage_main?saved=1#advanced', status=303)
 
     def _header(self):
         return '''<!doctype html><html lang="en"><head><meta charset="utf-8">

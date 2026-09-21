@@ -42,7 +42,7 @@ and Pillow 10.4 with ReportLab below 4.4.3; newer environments continue to test 
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.1.2-py3-none-any.whl
+python -m pip install /path/to/products_enablescripts-0.2.0-py3-none-any.whl
 # Or, from a checkout, also installing Pillow and ReportLab:
 python -m pip install '.[all]'
 ```
@@ -104,6 +104,37 @@ return output.getvalue()
 
 Helpers are available separately, e.g.
 `from Products.EnableScripts import ImageBuffer, PdfBuffer`.
+
+## Advanced: custom libraries
+
+A root Manager can configure additional installed modules under **Advanced:
+custom libraries**. Enter a dotted import name such as `decimal`, inspect the
+public exports, and save the names you want scripts to import. No package is
+installed from this screen. Package names and import names may differ.
+
+Inspection imports the module as ordinary Python code, so only inspect trusted
+libraries. Inspection itself adds no EnableScripts security declarations.
+New entries are disabled by default. Enable the saved entry and restart every
+worker to apply it. Editing, disabling or removing an entry also requires a
+restart; the panel displays the policy currently active in that process.
+
+For returned objects, add explicit rules such as:
+
+```text
+decimal:Decimal = quantize as_tuple
+```
+
+These rules cover exact object types. Instance attributes can be entered even
+when inspection cannot discover them. Subclasses may need separate rules.
+Private names, wildcards, duplicate class policies and classes that manage their
+own Zope security are rejected. Modules and classes already covered by presets
+must be configured in their existing controls. Custom exports are frozen when
+saved: newly added names after library upgrades are not automatically allowed.
+
+This is an advanced trust decision, not a sandbox. Libraries can expose filesystem,
+network or process access. Arbitrary packages are not guaranteed to work, and
+other libraries/products can grant overlapping access. Custom entries and preset
+selections are saved independently in ZODB.
 
 ## Migration and limits
 

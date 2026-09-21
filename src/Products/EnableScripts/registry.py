@@ -46,6 +46,9 @@ def prepare(feature):
         if not isinstance(cls, type):
             raise TypeError(f"{cls!r} is not a class")
         # Attribute names may refer to instance attributes, e.g. Image.size.
+    for cls, names in types:
+        if hasattr(cls, '__roles__'):
+            raise TypeError(f"{cls!r} manages its own security; exact-type rules are not supported")
     exports = {name: resolve(path) for name, path in feature.exports.items()}
     return classes, types, exports
 
@@ -61,19 +64,20 @@ def availability(feature):
     return True, ", ".join(versions) or "Python / Zope"
 
 
-def expand(keys):
+def expand(keys, features=None):
+    features = FEATURES if features is None else features
     result = []
     visiting = set()
 
     def visit(key):
-        if key not in FEATURES:
+        if key not in features:
             raise ValueError(f"Unknown integration: {key}")
         if key in visiting:
             raise ValueError(f"Circular integration dependency: {key}")
         if key in result:
             return
         visiting.add(key)
-        for dependency in FEATURES[key].requires:
+        for dependency in features[key].requires:
             visit(dependency)
         visiting.remove(key)
         result.append(key)

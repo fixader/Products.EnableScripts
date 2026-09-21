@@ -11,6 +11,8 @@ SETTINGS_ATTRIBUTE = "_enable_scripts_settings"
 
 class Settings(Persistent):
     def __init__(self):
+        self.custom = ()
+        self.custom_enabled = ()
         self.enabled = ()
         self.disabled = ()
         self.revision = 0

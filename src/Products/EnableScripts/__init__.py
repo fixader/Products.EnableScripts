@@ -18,5 +18,6 @@ def initialize(context):
         _extensions_loaded = True
     app = context.getApplication()
     settings = get_settings(app)
-    activate(settings.enabled if settings else (), settings.disabled if settings else ())
+    activate(settings.enabled if settings else (), settings.disabled if settings else (),
+             getattr(settings, "custom", ()), getattr(settings, "custom_enabled", ()))
     install_panel()
