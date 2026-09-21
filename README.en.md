@@ -2,7 +2,10 @@
 
 Granular, opt-in library access for **Zope 5 / 6 Script (Python)**, managed from
 the ZMI. Detect installed supported libraries, enable an integration, and expand
-its checkboxes to control individual imports, objects, methods and attributes.
+its module choices. Each module lists its imports, objects, methods and attributes
+without separate checkboxes for every API member. Installation commands and
+Script (Python) import examples appear beside every module. ReportLab Canvas,
+Platypus, barcodes and PDF helpers are grouped together.
 
 > **RestrictedPython is restricted for a reason.** This product intentionally
 > expands what restricted scripts can access. Use it only when you trust every
@@ -32,7 +35,7 @@ the parent is disabled. Dependencies such as BytesIO are selected automatically.
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.1.0-py3-none-any.whl
+python -m pip install /path/to/products_enablescripts-0.1.1-py3-none-any.whl
 # Or, from a checkout, also installing Pillow and ReportLab:
 python -m pip install '.[all]'
 ```
@@ -103,9 +106,9 @@ imports from `Products.GlobalModule` must be changed to `Products.EnableScripts`
 normal imports from `PIL`, `reportlab`, `io`, etc. keep their names.
 
 Known legacy ReportLab module exports and Canvas/ImageReader methods are
-discovered from the installed version and displayed individually. Newly
+discovered from the installed version and listed under their module. Newly
 discovered names after an upgrade default to enabled under an enabled
-integration: review selections after library upgrades. Private `_` names remain
+module: review selections after library upgrades. Private `_` names remain
 subject to RestrictedPython. Import access does not promise that every object
 returned by every library function is usable; supported object policies are
 listed in the panel. These policies govern attribute access, not arbitrary

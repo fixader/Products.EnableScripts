@@ -18,15 +18,15 @@ safe to expose to untrusted users.
   local URL access via urllib.
 * The separate extended-io integration exposes filesystem constructors/functions.
   Enable BytesIO alone when you only need in-memory streams.
-* The checkboxes are attribute/import controls. They are not argument filters,
+* The checkboxes select supported module APIs. They are not argument filters,
   capability isolation, resource quotas, or a defense against hostile Python.
-  Alternative APIs can perform equivalent operations even if one method is off.
+  Alternative APIs can perform equivalent operations through other enabled modules.
 * Image/PDF parsing and rendering can consume substantial memory or CPU.
   Use deployment-level resource controls for untrusted inputs.
 * Other products may grant overlapping access. EnableScripts cannot guarantee
   revocation when another product, startup hook or trusted code changes policies.
-* A library upgrade can introduce new public names. Discovered subchoices default
-  to enabled, as do all subchoices in this product. Review upgrades accordingly.
+* A library upgrade can introduce new public names. New exports in enabled modules
+  default to enabled. Disabled modules stay disabled. Review upgrades accordingly.
 
 ## Administration and persistence
 

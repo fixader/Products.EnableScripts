@@ -1,4 +1,4 @@
-"""Manager-only ZMI control panel with persistent, granular selections."""
+"""Manager-only ZMI control panel with persistent module selections."""
 
 from html import escape
 from importlib import metadata
@@ -16,7 +16,7 @@ except ImportError:  # Zope 5 uses docstring-based publishing.
         return value
 
 from . import runtime
-from .policy import choices, member_key, object_key, symbol_key
+from .policy import module_groups
 from .registry import FEATURES, availability, expand
 from .settings import get_settings
 
@@ -59,28 +59,37 @@ class EnableScriptsPanel(SimpleItem):
         disabled = set(settings.disabled)
         pending = runtime.SNAPSHOT != runtime.snapshot(enabled, disabled)
         content = [self._header()]
-        content.append('<aside class="warning"><strong>RestrictedPython er begrenset av en grunn.</strong> '
-                       'Aktivering utvider tilgangen for restricted scripts i hele Zope-prosessen. '
-                       'Bibliotekene kan gi tilgang til filer, nettverk og serverressurser. '
-                       'Bruk dette bare når du stoler på scriptforfatterne. Avkryssingene er ikke en sandkasse.</aside>')
+        content.append('<aside class="warning"><strong>RestrictedPython is restricted for a reason.</strong> '
+                       'Libraries may access files, networks and server resources. Enable them only for trusted '
+                       'script authors. These settings are process-wide and are not a sandbox.</aside>')
         if saved:
-            content.append('<p class="notice">Valgene er lagret i ZODB.</p>')
+            content.append('<p class="notice">Settings saved in ZODB.</p>')
         if pending:
-            content.append('<p class="notice">Omstart kreves. Start alle Zope-prosesser på nytt for å ta i bruk valgene.</p>')
-        content.append(f'<p>Status gjelder prosess <strong>{runtime.PROCESS_ID}</strong>. '
-                       'Valgene gjelder hele Zope-prosessen, også andre nettsteder i samme prosess.</p>')
-        content.append('<p>Hovedvalget aktiverer biblioteket. Alle underpunkter er på som standard; '
-                       'fold ut for å begrense importer, objekter og metoder. '
-                       'Avhengigheter som BytesIO aktiveres automatisk ved lagring.</p>')
+            content.append('<p class="notice">Restart required. Restart every Zope worker to apply these settings.</p>')
+        content.append(f'<p>Current process: <strong>{runtime.PROCESS_ID}</strong>. Settings affect all sites in this process.</p>')
+        content.append('<p>Enable a library, then choose its modules. Modules default to on. Expand Includes '
+                       'to see available objects and methods. Dependencies such as BytesIO are enabled automatically.</p>')
         content.append('<form method="post" action="manage_save">')
         content.append(f'<input type="hidden" name="token" value="{settings.token(user_id)}">')
-        for key, feature in FEATURES.items():
+        pdf_keys = ("reportlab", "platypus", "barcodes", "pdf_helpers")
+        ordered = sorted(FEATURES, key=lambda key: (
+            1 if key in pdf_keys else 0 if key == "bytesio" else 2, list(FEATURES).index(key)))
+        reportlab_group = False
+        for key in ordered:
+            feature = FEATURES[key]
+            is_reportlab = key in pdf_keys
+            if is_reportlab and not reportlab_group:
+                content.append('<div class="library-group"><h2>ReportLab &amp; PDF</h2>')
+                reportlab_group = True
+            elif reportlab_group and not is_reportlab:
+                content.append('</div>')
+                reportlab_group = False
             available, reason = availability(feature)
             selected = key in enabled
             active = key in runtime.ACTIVE
-            status = "Aktiv" if active else "Ikke aktiv"
+            status = "Active" if active else "Inactive"
             if key in runtime.ERRORS:
-                status = "Kunne ikke aktiveres: " + runtime.ERRORS[key]
+                status = "Could not activate: " + runtime.ERRORS[key]
             content.append('<section class="feature">')
             content.append('<div class="feature-title">' + _checkbox(
                 "enabled", key, feature.title, selected, not available and not selected))
@@ -88,40 +97,64 @@ class EnableScriptsPanel(SimpleItem):
             content.append(f'<p>{escape(feature.description)}</p>')
             content.append(f'<p class="availability">{escape(reason)}</p>')
             if feature.requires:
-                content.append('<p class="dependencies">Avhengigheter: ' + escape(
+                content.append('<p class="dependencies">Requires: ' + escape(
                     ", ".join(FEATURES[k].title for k in feature.requires)) + '</p>')
-            content.append(f'<details><summary>Importer, objekter og metoder ({len(choices(feature))} valg)</summary>')
-            for module, names in feature.modules.items():
-                content.append(f'<div class="module"><h3>{escape(module)}</h3><div class="choices">')
-                for name in names:
-                    choice = symbol_key(module, name)
-                    content.append(_checkbox("details", choice, name, choice not in disabled))
-                content.append('</div></div>')
-            if feature.exports:
-                content.append('<h3>Egne hjelpere: Products.EnableScripts</h3><div class="choices">')
-                for name in feature.exports:
-                    choice = symbol_key("Products.EnableScripts", name)
-                    content.append(_checkbox("details", choice, name, choice not in disabled))
-                content.append('</div>')
-            for path, names in {**feature.classes, **feature.types}.items():
-                choice = object_key(path)
-                content.append('<div class="object">' + _checkbox(
-                    "details", choice, path.replace(":", "."), choice not in disabled))
-                content.append('<p class="hint">Tilgang til objektet og dets metoder/attributter. '
-                               'Gjelder også objekter som returneres av andre kall.</p><div class="choices">')
-                for name in names:
-                    choice = member_key(path, name)
-                    content.append(_checkbox("details", choice, name, choice not in disabled))
-                content.append('</div></div>')
-            content.append('</details></section>')
-        content.append('<button type="submit">Lagre valg</button></form>')
-        content.append('<p>Direkte bibliotektilgang lar scriptforfattere bruke bibliotekets funksjoner, '
-                       'inkludert filstier der biblioteket støtter det. '
-                       'EnableScripts kan ikke oppheve tilgang gitt av andre produkter. '
-                       'Fjern gamle GlobalModule/GlobalModules-aktiveringer før overgang.</p>')
+            for choice, (module, keys) in module_groups(feature).items():
+                excluded = keys & disabled
+                content.append('<div class="module">' + _checkbox(
+                    "modules", choice, module, choice not in disabled and not excluded))
+                if excluded and excluded != keys:
+                    content.append('<p class="hint">Previously restricted individually. Left unchecked to preserve '
+                                   'restrictions; checking this enables the whole listed API.</p>')
+                if feature.distributions:
+                    install = "python -m pip install " + " ".join(feature.distributions)
+                elif key == "hubarcode":
+                    install = "python -m pip install hubarcode==1.0.0"
+                elif module == "Products.EnableScripts":
+                    install = "Included with Products.EnableScripts; no additional package needed."
+                else:
+                    install = "Python standard library; no additional package needed."
+                names = tuple(feature.exports) if module == "Products.EnableScripts" else feature.modules.get(module, ())
+                preferred = {"io": "BytesIO" if key == "bytesio" else "StringIO",
+                             "reportlab.pdfgen.canvas": "Canvas", "reportlab.lib.utils": "ImageReader",
+                             "reportlab.lib.pagesizes": "A4", "PIL.Image": "new", "PIL.ImageDraw": "Draw", "PIL.ImageFont": "truetype",
+                             "PIL.ImageOps": "fit", "PIL.ImageEnhance": "Contrast",
+                             "reportlab.lib.colors": "Color", "reportlab.lib.units": "mm",
+                             "reportlab.pdfbase.pdfmetrics": "registerFont", "reportlab.pdfbase.ttfonts": "TTFont",
+                             "reportlab.platypus": "SimpleDocTemplate", "reportlab.lib.styles": "getSampleStyleSheet",
+                             "reportlab.lib.enums": "TA_CENTER", "reportlab.platypus.flowables": "Spacer",
+                             "reportlab.graphics.barcode": "createBarcodeDrawing",
+                             "reportlab.graphics.barcode.common": "Barcode",
+                             "reportlab.graphics.barcode.code128": "Code128",
+                             "reportlab.graphics.barcode.ecc200datamatrix": "ECC200DataMatrix",
+                             "xml.etree.ElementTree": "fromstring", "urllib.request": "urlopen",
+                             "urllib.parse": "urlencode", "urllib.error": "HTTPError",
+                             "http.client": "HTTPConnection",
+                             "hubarcode.datamatrix": "DataMatrixEncoder"}
+                example = preferred.get(module, next(iter(names), None))
+                statement = f"from {module} import {example}" if example else f"import {module}"
+                content.append(f'<p class="hint">Install in Zope&#8217;s Python environment: <code>{escape(install)}</code><br>'
+                               f'Import in Script (Python): <code>{escape(statement)}</code></p>')
+                if key == "hubarcode":
+                    content.append('<p class="hint">Hubarcode 1.0.0 also needs the Python 3 DataMatrix compatibility repair '
+                                   'described in the project README.</p>')
+                content.append('<details class="includes"><summary>Includes</summary>')
+                content.append('<p>' + escape(", ".join(names) or "Package namespace") + '</p>')
+                for path, members in {**feature.classes, **feature.types}.items():
+                    if "object|" + path in keys:
+                        content.append(f'<p><strong>{escape(path.replace(":", "."))}</strong>: '
+                                       + escape(", ".join(members)) + '</p>')
+                content.append('</details></div>')
+            content.append('</section>')
+        if reportlab_group:
+            content.append('</div>')
+        content.append('<button type="submit">Save settings</button></form>')
+        content.append('<p>Library access includes filesystem paths where supported. '
+                       'EnableScripts cannot revoke access granted by other products. '
+                       'Remove old GlobalModule/GlobalModules grants when migrating.</p>')
         installed = sorted({(d.metadata.get("Name", "?"), d.version) for d in metadata.distributions()})
-        content.append('<details class="inventory"><summary>Installerte Python-pakker</summary>'
-                       '<p>Kun oppdagelse. Nye biblioteker trenger en integrasjon før de får avkryssinger.</p>'
+        content.append('<details class="inventory"><summary>Installed Python packages</summary>'
+                       '<p>Discovery only. Additional libraries need an integration before they can be enabled.</p>'
                        '<ul>')
         content.extend(f'<li>{escape(name)} {escape(version)}</li>' for name, version in installed)
         content.append('</ul></details></main></body></html>')
@@ -132,7 +165,7 @@ class EnableScriptsPanel(SimpleItem):
 
     @zpublish
     @security.protected("Manage properties")
-    def manage_save(self, REQUEST, token="", enabled=(), details=()):
+    def manage_save(self, REQUEST, token="", enabled=(), modules=()):
         """Persist selections. Assertions are not changed by this request."""
         app, user_id = self._require_manager()
         if REQUEST.get("REQUEST_METHOD") != "POST":
@@ -140,10 +173,11 @@ class EnableScriptsPanel(SimpleItem):
         settings = get_settings(app)
         if settings is None or not settings.validate_token(user_id, token):
             raise Forbidden("Invalid or stale form. Reload EnableScripts and try again.")
-        all_choices = set().union(*(choices(feature) for feature in FEATURES.values()))
-        checked = set(_items(details))
-        if not checked <= all_choices:
-            raise BadRequest("Unknown detail selection")
+        groups = {key: keys for feature in FEATURES.values()
+                  for key, (_, keys) in module_groups(feature).items()}
+        checked = set(_items(modules))
+        if not checked <= groups.keys():
+            raise BadRequest("Unknown module selection")
         try:
             selected = expand(_items(enabled))
         except ValueError as exc:
@@ -153,14 +187,14 @@ class EnableScriptsPanel(SimpleItem):
             if not available and key not in settings.enabled:
                 raise BadRequest(f"{FEATURES[key].title}: {reason}")
         settings.enabled = tuple(selected)
-        settings.disabled = tuple(sorted(all_choices - checked))
+        settings.disabled = tuple(sorted(groups.keys() - checked))
         settings.revision += 1
         # ZPublisher commits the request transaction; no manual commit and no
         # process-local grants here, so aborted requests cannot leak access.
         return REQUEST.RESPONSE.redirect(self.absolute_url() + "/manage_main?saved=1", status=303)
 
     def _header(self):
-        return '''<!doctype html><html lang="nb"><head><meta charset="utf-8">
+        return '''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>EnableScripts</title>
 <style>
 body{font:15px/1.5 system-ui,sans-serif;background:#f4f6f8;color:#24313f;margin:0}
@@ -169,14 +203,14 @@ h1{margin-bottom:4px}h3{font-size:14px;margin:16px 0 7px;overflow-wrap:anywhere}
 .feature{background:white;border:1px solid #d3dce5;border-radius:8px;padding:18px;margin:15px 0}
 .feature-title{display:flex;gap:20px;align-items:center;justify-content:space-between;font-weight:650;font-size:18px}
 .status{font-size:13px;color:#526378}.availability,.dependencies,.hint{color:#526378;font-size:13px}
-.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:7px 12px;padding:5px 0 12px 22px}
+.library-group{border-left:3px solid #9aafc5;padding-left:18px}.module{border-top:1px solid #e4e9ee;padding:12px 0}.module>label{font-weight:600}.includes{margin-left:22px;font-size:13px;overflow-wrap:anywhere}code{overflow-wrap:anywhere}.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:7px 12px;padding:5px 0 12px 22px}
 .choices label{overflow-wrap:anywhere}.object{border-top:1px solid #e4e9ee;padding-top:12px;margin-top:12px}
 .object>label{font-weight:600;overflow-wrap:anywhere}input{accent-color:#245da2}summary{cursor:pointer;font-weight:600}
 .notice{padding:14px;background:#fff1c9;border-left:4px solid #ae7c00}button{background:#245da2;color:white;border:0;border-radius:5px;padding:12px 22px;font:inherit;cursor:pointer}
 .warning{padding:16px;background:#fff2ef;border:1px solid #e5aca0;border-radius:6px;margin:18px 0}.warning strong{display:block;margin-bottom:5px}
 .inventory{margin-top:25px}.inventory ul{columns:2}.hint{margin:4px 0 8px 22px}
 </style></head><body><main><a href="../manage_main">← Zope Control Panel</a>
-<h1>EnableScripts</h1><p>Biblioteker for Script (Python)</p>'''
+<h1>EnableScripts</h1><p>Libraries for Script (Python)</p>'''
 
 
 InitializeClass(EnableScriptsPanel)

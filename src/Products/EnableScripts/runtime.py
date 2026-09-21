@@ -8,7 +8,7 @@ from AccessControl import ModuleSecurityInfo
 from AccessControl.SecurityInfo import secureModule
 from AccessControl.SimpleObjectPolicies import allow_type
 
-from .policy import allowed_members, object_key, symbol_key
+from .policy import allowed_members, module_groups, object_key, symbol_key
 from .registry import FEATURES, availability, expand, prepare, resolve
 
 logger = logging.getLogger("Products.EnableScripts")
@@ -31,6 +31,10 @@ def activate(enabled=(), disabled=()):
             raise RuntimeError("EnableScripts policy changed; restart this Zope process")
         return
     disabled = set(disabled)
+    for feature in FEATURES.values():
+        for key, (_, keys) in module_groups(feature).items():
+            if key in disabled:
+                disabled.update(keys)
     denied_objects = []
     for feature in FEATURES.values():
         for path in tuple(feature.classes) + tuple(feature.types):

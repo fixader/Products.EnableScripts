@@ -40,7 +40,7 @@ debug-exceptions off
     app = TestApp(make_wsgi_app({}, str(config)), extra_environ={"x-wsgiorg.throw_errors": False})
     import Zope2
     from Products.EnableScripts import runtime
-    from Products.EnableScripts.policy import choices, member_key
+    from Products.EnableScripts.policy import module_groups
     from Products.EnableScripts.registry import FEATURES
     from Products.EnableScripts.settings import get_settings
     from scenario import run, denied
@@ -62,40 +62,49 @@ debug-exceptions off
     assert "EnableScripts" in page.text
     assert "no-store" == page.headers["Cache-Control"]
     token = page.html.find("input", {"name": "token"})["value"]
-    all_choices = set().union(*(choices(f) for f in FEATURES.values()))
-    disabled_member = member_key("io:BytesIO", "truncate")
-    details = all_choices - {disabled_member}
-    params = [("token", token)] + [("details:list", key) for key in sorted(details)]
+    groups = {key: keys for f in FEATURES.values() for key, (_, keys) in module_groups(f).items()}
+    disabled_module = "module|reportlab|reportlab.lib.pagesizes"
+    details = groups.keys() - {disabled_module}
+    params = [("token", token)] + [("modules:list", key) for key in sorted(details)]
+    assert page.html.html["lang"] == "en"
+    assert not page.html.select('input[name="details:list"]')
+    assert len(page.html.select('input[name="modules:list"]')) == len(groups)
+    pdf_group = page.html.select_one('.library-group')
+    assert {i["value"] for i in pdf_group.select('input[name="enabled:list"]')} == {
+        "reportlab", "platypus", "barcodes", "pdf_helpers"}
+    assert "from reportlab.pdfgen.canvas import Canvas" in page.text
+    assert "python -m pip install reportlab" in page.text
     if phase == "initial":
         assert not runtime.ACTIVE
         expect_http_error(lambda: app.get(save_path, headers=headers, expect_errors=True), 403, Forbidden)
         expect_http_error(lambda: app.post(save_path, {"token": "invalid"}, headers=headers, expect_errors=True), 403, Forbidden)
         expect_http_error(lambda: app.post(save_path, [("token", token), ("enabled:list", "unknown")], headers=headers, expect_errors=True), 400, BadRequest)
-        params.append(("enabled:list", "bytesio"))
+        params.append(("enabled:list", "reportlab"))
         response = app.post(save_path, params, headers=headers, status=303)
         assert not runtime.ACTIVE, "Saving must not mutate process security"
         expect_http_error(lambda: app.post(save_path, params, headers=headers, expect_errors=True), 403, Forbidden)  # stale token
         saved = response.follow(headers=headers)
-        assert "Omstart kreves" in saved.text
+        assert "Restart required" in saved.text
         root_app = Zope2.app()
         settings = get_settings(root_app)
-        assert settings.enabled == ("bytesio",)
-        assert settings.disabled == (disabled_member,)
+        assert settings.enabled == ("bytesio", "reportlab")
+        assert settings.disabled == (disabled_module,)
         root_app._p_jar.close()
         (root / "panel.html").write_text(saved.text, encoding="utf-8")
     elif phase == "restart":
-        assert runtime.ACTIVE == {"bytesio"}
-        assert "Omstart kreves" not in page.text
+        assert runtime.ACTIVE == {"bytesio", "reportlab"}
+        assert "Restart required" not in page.text
         assert run("from io import BytesIO\nb=BytesIO(b'yes')\nreturn b.read()") == b"yes"
-        denied("from io import BytesIO\nreturn BytesIO().truncate()")
+        denied("from reportlab.lib.pagesizes import A4\nreturn A4")
+        assert run("from io import BytesIO\nfrom reportlab.pdfgen.canvas import Canvas\nb=BytesIO()\nc=Canvas(b)\nc.drawString(10,10,'ok')\nc.save()\nreturn b.getvalue()").startswith(b"%PDF")
         app.post(save_path, params, headers=headers, status=303)
-        assert runtime.ACTIVE == {"bytesio"}, "Disabling takes effect after restart"
+        assert runtime.ACTIVE == {"bytesio", "reportlab"}, "Disabling takes effect after restart"
     elif phase == "disabled_again":
         assert not runtime.ACTIVE
         denied("from io import BytesIO\nreturn BytesIO()")
         root_app = Zope2.app()
         settings = get_settings(root_app)
-        assert settings.disabled == (disabled_member,), "Subchoices must survive disabling"
+        assert settings.disabled == (disabled_module,), "Subchoices must survive disabling"
         root_app._p_jar.close()
     else:
         raise ValueError(phase)
