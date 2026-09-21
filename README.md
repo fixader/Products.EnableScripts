@@ -7,13 +7,22 @@ without separate checkboxes for every API member. Installation commands appear o
 examples beside each module. ReportLab Canvas,
 Platypus, barcodes and PDF helpers are grouped together.
 
-> **RestrictedPython is restricted for a reason.** This product intentionally
-> expands what restricted scripts can access. Use it only when you trust every
-> person who can create or edit scripts on the affected Zope server. These grants
-> are process-wide. Library calls may access files, networks and server resources.
-> Checkboxes do **not** make third-party libraries safe or establish a sandbox.
-> Read [SECURITY.md](https://github.com/fixader/Products.EnableScripts/blob/main/SECURITY.md)
-> before enabling anything.
+> **RestrictedPython is restricted for a reason.**
+>
+> **Enabling a library means trusting EVERY person who can create or edit
+> Script (Python), or other restricted Python code, anywhere on the affected
+> Zope server.** That includes authors in other sites and folders, current and
+> future authors, and people who cannot access this control panel. The grant is
+> not limited to the administrator, current site or a particular script.
+>
+> Allowed library functions execute ordinary Python code with the Zope operating
+> system account's privileges. Depending on the API, they can access files,
+> networks, processes and server resources. Do not enable access unless you trust
+> all affected script authors with those capabilities. Checkboxes are not a sandbox.
+>
+> Grants are process-wide. All workers/ZEO clients loading these settings apply
+> them after restart. Independent Zope instances with separate processes and
+> settings are not automatically affected.
 
 ## Features
 
@@ -42,7 +51,7 @@ and Pillow 10.4 with ReportLab below 4.4.3; newer environments continue to test 
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.2.0-py3-none-any.whl
+python -m pip install /path/to/products_enablescripts-0.2.1-py3-none-any.whl
 # Or, from a checkout, also installing Pillow and ReportLab:
 python -m pip install '.[all]'
 ```
@@ -57,11 +66,28 @@ Restart Zope, then open **Control Panel → EnableScripts**:
 /Control_Panel/EnableScripts/manage_main
 ```
 
-Select integrations, optionally adjust subchoices, save, and restart **every Zope
-worker**. The page distinguishes saved selections from the current process's
-active policy. Saving does not change process-global assertions during an HTTP
-transaction. Missing optional dependencies are shown on the page and skipped at
-startup. Only a root Manager can change settings.
+1. Sign in as a Manager at the Zope application root and open the panel.
+2. Check the availability message. A package can be installed yet unavailable
+   because its version lacks APIs required by the integration. Install a compatible
+   version using **Zope's Python**, then restart and reload the panel.
+3. Select the library and only the modules you need. Module subchoices default
+   to on. Expand **Includes** to review the exposed objects and methods.
+   Dependencies such as BytesIO are selected automatically when saving.
+4. Click **Save settings**. This persists the policy in ZODB; it does not change
+   permissions in any running worker.
+5. Restart **every Zope worker and ZEO client** loading this configuration.
+   Reload the panel and check for errors and the restart-required notice.
+   Status describes the responding process, so verify every worker in a
+   multi-worker deployment. Active means the integration loaded, not that all
+   possible library operations are supported.
+6. Use the module's displayed import example in Script (Python) and test with
+   representative input before using it in your application.
+
+To revoke a preset grant, uncheck the library or module and save. To revoke a
+custom grant, disable or remove its saved entry. **Restart every worker in both
+cases**: old grants remain active until restart. Removing EnableScripts cannot
+revoke overlapping grants from another product or equivalent access through
+another enabled library.
 
 For buildout, keep this product's source outside generated instance/parts
 directories and include it in `develop` and the instance `eggs`:

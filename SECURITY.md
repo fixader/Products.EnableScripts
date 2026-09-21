@@ -1,11 +1,21 @@
 # Security model
 
-**RestrictedPython is restricted for a reason. EnableScripts deliberately
-widens the capabilities available to restricted Zope scripts.** It is intended
-for servers where script authors are trusted by the server administrator.
+**RestrictedPython is restricted for a reason.**
 
-Enabling a library is a trust decision, not a declaration that the library is
-safe to expose to untrusted users.
+> **Enabling a library means trusting EVERY person who can create or edit
+> Script (Python), or other restricted Python code, anywhere on the affected
+> Zope server.** That includes authors in other sites and folders, current and
+> future authors, and people who cannot access this control panel. The grant is
+> not limited to the administrator, current site or a particular script.
+>
+> Allowed library functions execute ordinary Python code with the Zope operating
+> system account's privileges. Depending on the API, they can access files,
+> networks, processes and server resources. Do not enable access unless you trust
+> all affected script authors with those capabilities. Checkboxes are not a sandbox.
+>
+> Grants are process-wide. All workers/ZEO clients loading these settings apply
+> them after restart. Independent Zope instances with separate processes and
+> settings are not automatically affected.
 
 ## Scope of the grants
 
@@ -25,8 +35,15 @@ safe to expose to untrusted users.
   Use deployment-level resource controls for untrusted inputs.
 * Other products may grant overlapping access. EnableScripts cannot guarantee
   revocation when another product, startup hook or trusted code changes policies.
-* A library upgrade can introduce new public names. New exports in enabled modules
-  default to enabled. Disabled modules stay disabled. Review upgrades accordingly.
+* A library upgrade can introduce new public names. Discovered preset exports in
+  enabled modules default to enabled. Custom exports are frozen when saved, but
+  implementations of already permitted functions can still change. Disabled
+  modules stay disabled. Review upgrades accordingly.
+* Inspecting a custom module imports it as ordinary Python code and can execute
+  initialization with side effects. Inspect only trusted installed libraries.
+  Inspection itself does not add EnableScripts access declarations.
+* Custom rules authorize exact object types and explicit public names. They are
+  not argument validation and do not guarantee arbitrary libraries will work.
 
 ## Administration and persistence
 

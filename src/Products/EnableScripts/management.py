@@ -61,16 +61,29 @@ class EnableScriptsPanel(SimpleItem):
         pending = runtime.SNAPSHOT != runtime.snapshot(enabled, disabled, getattr(settings, "custom", ()),
                                                        getattr(settings, "custom_enabled", ()))
         content = [self._header()]
-        content.append('<aside class="warning"><strong>RestrictedPython is restricted for a reason.</strong> '
-                       'Libraries may access files, networks and server resources. Enable them only for trusted '
-                       'script authors. These settings are process-wide and are not a sandbox.</aside>')
+        content.append(self._trust_warning())
         if saved:
             content.append('<p class="notice">Settings saved in ZODB.</p>')
         if pending:
             content.append('<p class="notice">Restart required. Restart every Zope worker to apply these settings.</p>')
         content.append(f'<p>Current process: <strong>{runtime.PROCESS_ID}</strong>. Settings affect all sites in this process.</p>')
-        content.append('<p>Enable a library, then choose its modules. Modules default to on. Expand Includes '
-                       'to see available objects and methods. Dependencies such as BytesIO are enabled automatically.</p>')
+        content.append('<details class="feature"><summary>How to install, enable and disable libraries</summary>'
+                       '<ol><li>Install EnableScripts and any required library into the Python environment used by Zope. '
+                       'The commands shown below must use that environment&#8217;s Python. With buildout, also retain '
+                       'the packages in the instance eggs. This page does not install packages.</li>'
+                       '<li>Restart Zope after installing packages, then return here. An unavailable library cannot '
+                       'be enabled; read its reported error. An installed version may still lack required APIs.</li>'
+                       '<li>Select the library and the modules you need. Module choices default to on. Expand Includes '
+                       'to review the exposed objects and methods. Dependencies such as BytesIO are selected automatically.</li>'
+                       '<li>Click Save settings, then restart every Zope worker using this configuration, including '
+                       'ZEO clients. Saving alone does not change running scripts&#8217; permissions.</li>'
+                       '<li>Reload this page and check the process status and any activation errors. Active means the '
+                       'integration loaded in this process; it does not prove every library operation will work.</li>'
+                       '<li>Use the displayed import statement in Script (Python). Test with representative data before '
+                       'using the integration in your application.</li></ol>'
+                       '<p><strong>To revoke access:</strong> uncheck the library or module, save, and restart every worker. '
+                       'For custom entries, disable or remove the policy and restart. Until then, existing grants remain '
+                       'active. Other products or enabled APIs may still grant overlapping access.</p></details>')
         content.append('<form method="post" action="manage_save">')
         content.append(f'<input type="hidden" name="token" value="{settings.token(user_id)}">')
         reportlab_install = ('python -m pip install "reportlab>=4,<4.4.3"'
@@ -204,10 +217,33 @@ class EnableScriptsPanel(SimpleItem):
         # process-local grants here, so aborted requests cannot leak access.
         return REQUEST.RESPONSE.redirect(self.absolute_url() + "/manage_main?saved=1", status=303)
 
+    def _trust_warning(self):
+        return ('<aside class="warning"><strong>RestrictedPython is restricted for a reason.</strong>'
+                '<p><b>By enabling a library, you are trusting EVERY person who can create or edit '
+                'Script (Python) or other restricted Python code anywhere on the affected Zope server.</b> '
+                'This includes script authors in other sites and folders, now and in the future, '
+                'even if they cannot open this control panel.</p>'
+                '<p>Grants apply across the entire Zope process, not just to your account, the current site, '
+                'or a particular script. Workers and ZEO clients loading these settings apply the same grants '
+                'after restart. Separate Zope instances with separate processes and settings are not automatically changed.</p>'
+                '<p>Allowed library code can read or write files, make network requests, consume server resources, '
+                'and, depending on the API, run commands with the Zope operating-system account&#8217;s privileges. '
+                'These checkboxes are not a sandbox and do not make a library safe. '
+                'Do not enable access if you cannot trust all affected script authors with these capabilities.</p></aside>')
+
     def _advanced(self, settings, user_id):
         from .custom import rules_text
         token = escape(settings.token(user_id), quote=True)
         content = ['<section class="feature" id="advanced"><h2>Advanced: custom libraries</h2>'
+                   '<ol><li>Install the package in Zope&#8217;s Python environment and restart if necessary.</li>'
+                   '<li>Enter its importable module name, not necessarily its package name: for example, '
+                   'the Pillow package uses PIL.Image. Existing preset modules must use their preset controls.</li>'
+                   '<li>Click Inspect module. Review the detected exports and remove names you do not want to allow. '
+                   'Inspection grants no EnableScripts permissions, but importing a library can execute its startup code.</li>'
+                   '<li>If returned objects need access, add explicit class rules using the detected class names. '
+                   'Start with only the methods and attributes your script needs.</li>'
+                   '<li>Select Enable this module after restart and Save custom policy. Leaving it unchecked stores '
+                   'a disabled draft. Restart all workers and check status before testing your script.</li></ol>'
                    '<p>Expose modules from installed packages or the Python standard library. '
                    'Inspection imports the module as ordinary server code and may have side effects. '
                    'Only inspect libraries you trust. No packages are installed here.</p>'
@@ -267,7 +303,7 @@ class EnableScriptsPanel(SimpleItem):
         enabled = module in getattr(settings, 'custom_enabled', ())
         REQUEST.RESPONSE.setHeader('Content-Type', 'text/html; charset=utf-8')
         REQUEST.RESPONSE.setHeader('Cache-Control', 'no-store')
-        return self._header() + f'''
+        return self._header() + self._trust_warning() + f'''
 <h2>Inspect custom module: {escape(module)}</h2>
 <p>No script permissions have changed. Review the exports and optional class rules before saving.</p>
 <p><strong>Custom libraries are untested integrations.</strong> Public functions can access files, networks,
@@ -282,6 +318,11 @@ processes and other server resources. Allow only APIs intended for trusted scrip
 <textarea name="exports" rows="8" style="width:100%">{escape(' '.join(exports))}</textarea></label></p>
 <p><label>Optional object rules (one class per line)<br>
 <textarea name="rules" rows="5" style="width:100%" placeholder="decimal:Decimal = quantize as_tuple">{escape(rules)}</textarea></label></p>
+<p>For example, export <code>Decimal</code> from <code>decimal</code> and add
+<code>decimal:Decimal = quantize as_tuple</code> to let a script call those two methods.
+Import with <code>from decimal import Decimal</code>. Granting a class import alone does not
+necessarily allow methods on its instances. Object rules do not enable imports from other modules;
+inspect and save those modules separately if needed.</p>
 <p>Format: <code>module:Class = method attribute</code>. Instance attributes may be listed explicitly.
 No wildcards or private names. Classes already managed by a preset must be configured there.</p>
 {_checkbox('custom_on', module, 'Enable this module after restart', enabled)}
