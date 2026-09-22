@@ -90,6 +90,21 @@ does not remove the administrator's responsibility for those choices.
 * **Small, controlled teams:** give a known group access to selected libraries
   when the administrator accepts the server-wide implications and controls who
   can create or modify scripts.
+* **Controlled environments with strong external access boundaries:**
+  EnableScripts can provide an exceptionally direct and productive development
+  workflow when access to Zope management and Script (Python) editing is tightly
+  controlled. Suitable controls may include keeping management interfaces
+  unreachable by ordinary remote users, network segmentation, carefully designed
+  firewall rules, VPN or bastion access, restricted administrator accounts, and
+  a deliberate separation of sites, roles and responsibilities.
+
+These measures must reliably prevent untrusted people from creating or modifying
+scripts anywhere in the affected Zope processes. They reduce who can reach the
+capability; they do not make an exposed library safe or turn EnableScripts into
+a sandbox. Used by an administrator who understands the process-wide security
+grants and the surrounding architecture, this approach can offer extraordinary
+ease and speed of development. You need to understand exactly what you are
+exposing and who can reach it.
 
 It is not suitable as a way to offer arbitrary Python execution to untrusted
 users, customers, tenants or students on a shared server. Do not enable a library
