@@ -5,6 +5,14 @@ Script (Python), including operations often placed in External Methods: HTTPS
 requests, PDF generation, image processing and more. It is useful for education
 and rapid development where script-writing access is small and controlled.
 
+EnableScripts itself contains and automatically installs none of the optional
+application libraries it can expose. Pillow, ReportLab, Hubarcode and every additional package must be obtained and installed
+separately. Their own licenses and terms govern their use; installing
+EnableScripts does not provide, replace or extend those rights. The respective
+authors and distributors remain responsible for their libraries. EnableScripts
+only makes selected APIs from already installed software available to restricted
+scripts.
+
 **Before enabling anything, you must trust EVERY person who can create or edit
 restricted Python scripts anywhere on the affected Zope server, including other
 sites and folders.** A small group is not a sandbox. Libraries run ordinary Python
@@ -42,7 +50,7 @@ server you rely on; try the installation on a test server first.
 
 At the time of this guide, the package has not been published on PyPI. Install
 from the repository, or use a wheel you built from it. This command pins the
-0.2.1 implementation to a specific commit and requires Git:
+0.2.2 implementation to a specific commit and requires Git:
 
 ```sh
 /path/to/zope-venv/bin/python -m pip install "Products.EnableScripts @ git+https://github.com/fixader/Products.EnableScripts.git@5bce23a0844f0ecb7e0e46299ee7ecd60216895b"
@@ -51,7 +59,7 @@ from the repository, or use a wheel you built from it. This command pins the
 Or install a local wheel:
 
 ```sh
-/path/to/zope-venv/bin/python -m pip install /path/to/products_enablescripts-0.2.1-py3-none-any.whl
+/path/to/zope-venv/bin/python -m pip install /path/to/products_enablescripts-0.2.2-py3-none-any.whl
 ```
 
 These commands install EnableScripts and resolve its required Zope dependencies;
@@ -86,11 +94,11 @@ These commands can upgrade existing libraries. Review their compatibility with
 your application before running them. They are optional: you can install only
 EnableScripts first and inspect which existing libraries are available.
 
-From a source checkout, `python -m pip install '.[all]'` requests both Pillow and
-ReportLab with EnableScripts' version-dependent requirements. Omit `[all]` when
-you want the base product only. Other packages are installed in the same manner,
-then configured through Advanced; not every library API will work in restricted
-scripts without additional object rules.
+EnableScripts deliberately has no convenience extra that installs these
+libraries. Install each desired package explicitly so its source, version and
+license are visible in your deployment configuration. Other packages are
+installed in the same manner, then configured through Advanced; not every
+library API will work in restricted scripts without additional object rules.
 
 The ZMI panel **does not run pip, install packages, or repair dependencies**.
 Package names and import names can differ: install `Pillow`, import `PIL.Image`.
@@ -173,7 +181,7 @@ EnableScripts to the **existing** instance's eggs, preserving its current entrie
 [Instance]
 eggs =
     ... existing entries ...
-    Products.EnableScripts==0.2.1
+    Products.EnableScripts==0.2.2
 ```
 
 The ellipsis above is explanatory; do not paste it into your configuration.
@@ -199,7 +207,7 @@ used for the Python 3.8/Zope 5.8.3 deployment without upgrading its live setupto
    /path/to/egg-build-env/bin/python -c "from setuptools import setup; setup(script_args=['bdist_egg'])"
    ```
 
-2. Copy the generated `dist/Products.EnableScripts-0.2.1-py3.8.egg` into your
+2. Copy the generated `dist/Products.EnableScripts-0.2.2-py3.8.egg` into your
    buildout's local `downloads` directory. Retain it with your deployment files.
 3. Add that directory to the existing `[buildout] find-links` list:
 

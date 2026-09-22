@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Products.EnableScripts"
-version = "0.2.1"
-description = "Opt-in, granular library access for Zope restricted Python scripts."
+version = "0.2.2"
+description = "Expose selected APIs from separately installed libraries to Zope restricted Python scripts."
 readme = "README.en.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
@@ -33,10 +33,7 @@ Repository = "https://github.com/fixader/Products.EnableScripts"
 Issues = "https://github.com/fixader/Products.EnableScripts/issues"
 
 [project.optional-dependencies]
-pillow = ["Pillow>=10"]
-reportlab = ["reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'"]
-all = ["Pillow>=10", "reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'"]
-test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "hubarcode==1.0.0", "zxing-cpp; python_version >= '3.9'"]
+test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "Pillow>=10", "reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'", "hubarcode==1.0.0", "zxing-cpp; python_version >= '3.9'"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

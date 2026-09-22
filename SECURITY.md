@@ -17,6 +17,12 @@
 > them after restart. Independent Zope instances with separate processes and
 > settings are not automatically affected.
 
+EnableScripts does not contain, redistribute or automatically install the
+optional third-party libraries it can expose. Administrators obtain them separately and are solely
+responsible for complying with their licenses and other applicable terms.
+EnableScripts grants no license or usage right for those libraries, does not
+endorse them, and accepts no responsibility for their code or consequences.
+
 ## Scope of the grants
 
 * Module declarations and type/class policies are global to a Python process.

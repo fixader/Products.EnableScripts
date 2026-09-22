@@ -24,6 +24,43 @@ EnableScripts intentionally widens access. It does not turn every Python package
 into a restricted library, guarantee compatibility with arbitrary APIs, or make
 untrusted code safe to run.
 
+## What this product includes — and what it does not
+
+EnableScripts does **not** contain, redistribute or automatically install Pillow,
+ReportLab, Hubarcode, or any other optional application library it can expose. It only provides Zope security
+declarations and management controls that can expose selected APIs from
+libraries already installed separately in the Python environment used by Zope.
+
+Installing EnableScripts gives you no license or other right to use a third-party
+library. You are responsible for obtaining each library from its own publisher
+and complying with its license, copyright terms, commercial terms, export
+restrictions and other applicable requirements. Those libraries remain the work
+and responsibility of their respective authors and distributors. The
+EnableScripts author does not supply, license, endorse or accept responsibility
+for them.
+
+What EnableScripts can do is make compatible libraries easier and more enjoyable
+to explore from Script (Python): it shows useful imports and supported APIs,
+provides tested presets, and lets trusted users experiment quickly in the ZMI.
+Install every library independently before trying to enable it here.
+
+## Why this exists
+
+This is not only a classroom experiment. The author has used equivalent
+GlobalModule-style integrations in substantial Zope software solutions since the
+Zope 2 era. That approach has supported production systems generating hundreds
+of thousands of PDFs and images. EnableScripts turns those years of practical
+experience into an installable product with explicit controls, visible API
+descriptions, persistent settings and much clearer warnings about the trust
+boundary.
+
+The productive idea is simple: when a small, controlled group already develops
+inside Zope, direct access to carefully selected libraries can make Script
+(Python) remarkably capable and enjoyable to use. It enables fast experiments
+and can support serious workloads. Whether it is appropriate still depends on
+the people, libraries, permissions and deployment around it; proven usefulness
+does not remove the administrator's responsibility for those choices.
+
 > **RestrictedPython is restricted for a reason.**
 >
 > **Enabling a library means trusting EVERY person who can create or edit
@@ -149,14 +186,15 @@ optional libraries, custom access rules, restarts, removal and troubleshooting.
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.2.1-py3-none-any.whl
-# Or, from a checkout, also installing Pillow and ReportLab:
-python -m pip install '.[all]'
+python -m pip install /path/to/products_enablescripts-0.2.2-py3-none-any.whl
+# Or install the base product from a source checkout:
+python -m pip install .
 ```
 
 Once published on PyPI, the package name is `Products.EnableScripts`.
-The base distribution does not install Pillow or ReportLab; use the `pillow`,
-`reportlab`, or `all` extras when desired. It never installs packages from the ZMI.
+Install Pillow, ReportLab and every other library separately, under their own
+licenses and terms. EnableScripts never installs third-party libraries from the
+package or the ZMI.
 
 Restart Zope, then open **Control Panel → EnableScripts**:
 
@@ -283,7 +321,7 @@ attribute assignment.
 ## Development and publishing
 
 ```sh
-python -m pip install '.[all,test]'
+python -m pip install '.[test]'
 python -m pytest -q
 python -m build
 python -m twine check dist/*
