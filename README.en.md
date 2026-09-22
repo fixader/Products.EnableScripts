@@ -196,6 +196,28 @@ Install Pillow, ReportLab and every other library separately, under their own
 licenses and terms. EnableScripts never installs third-party libraries from the
 package or the ZMI.
 
+Common installation commands, using the Python environment that runs Zope:
+
+```sh
+# Image APIs and ImageBuffer
+python -m pip install "Pillow>=10"
+
+# Canvas, Platypus and ReportLab barcodes on Python 3.9+
+python -m pip install "reportlab>=4,<6"
+
+# ReportLab on Python 3.8
+python -m pip install "reportlab>=4,<4.4.3"
+
+# Legacy Hubarcode only when specifically required
+python -m pip install "huBarcode==1.0.0"
+```
+
+`io`/BytesIO, XML, urllib/HTTP and `decimal` come with Python and require no
+separate package. PDF helpers and permission-checked Zope image saving come with
+EnableScripts. See the [package-by-package installation matrix](INSTALL.md#3-install-only-the-extra-libraries-you-need)
+for the preset mapping, verification commands, upstream project links and the
+additional repair required by legacy Hubarcode.
+
 Restart Zope, then open **Control Panel → EnableScripts**:
 
 ```text

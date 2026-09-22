@@ -79,6 +79,24 @@ installation is not a replacement for recording the package in buildout.
 Install these into the same Python environment. No installation is needed for
 standard-library modules such as `io`, `xml`, `urllib` or `decimal`.
 
+| EnableScripts integration | What must be installed separately | What it enables |
+| --- | --- | --- |
+| BytesIO | Nothing; `io` is in Python's standard library | In-memory binary streams used by PDFs and images |
+| Pillow and Image helpers | [Pillow](https://pillow.readthedocs.io/en/stable/installation/index.html) | `PIL.Image`, drawing, fonts, transformations and `ImageBuffer` |
+| ReportLab Canvas, Platypus and ReportLab barcodes | [ReportLab](https://pypi.org/project/reportlab/) | PDF canvas, document layout, fonts, page sizes and supported barcodes |
+| PDF helpers | Nothing beyond EnableScripts; ReportLab is needed only when your script uses ReportLab to create the PDF | `PdfBuffer` and PDF response handling |
+| Save images in Zope | Nothing beyond EnableScripts | Permission-checked creation or replacement of Zope Image objects |
+| XML / ElementTree | Nothing; included with Python | XML parsing and element APIs |
+| HTTP / urllib | Nothing; included with Python | URL parsing and HTTP/HTTPS client APIs |
+| Extended `io` | Nothing; included with Python | Other `io` APIs, including filesystem access |
+| Hubarcode DataMatrix | Legacy [huBarcode 1.0.0](https://pypi.org/project/huBarcode/1.0.0/) plus the explicit Python 3 repair described below | Legacy DataMatrix encoder |
+| Advanced custom library | Whatever distribution supplies the module | Only the exports and exact object rules you save |
+
+The links above lead to the libraries' own installation/project information.
+Review each project's current Python support, dependencies, license and release
+notes before choosing a version. EnableScripts' tested presets describe an API
+surface; they do not replace the upstream installation documentation.
+
 ```sh
 # Images; pip selects a release compatible with the interpreter.
 /path/to/zope-venv/bin/python -m pip install "Pillow>=10"
@@ -88,7 +106,15 @@ standard-library modules such as `io`, `xml`, `urllib` or `decimal`.
 
 # Use this ReportLab range instead on Python 3.8.
 /path/to/zope-venv/bin/python -m pip install "reportlab>=4,<4.4.3"
+
+# Legacy Hubarcode, only if you specifically need that integration.
+/path/to/zope-venv/bin/python -m pip install "huBarcode==1.0.0"
 ```
+
+After installing `huBarcode==1.0.0`, run the separate repair command documented
+under [Legacy Hubarcode 1.0.0](README.md#legacy-hubarcode-100), make a backup as
+shown there, and restart Zope. ReportLab's maintained barcode integration is the
+preferred choice when it supports the barcode type you need.
 
 These commands can upgrade existing libraries. Review their compatibility with
 your application before running them. They are optional: you can install only
@@ -102,6 +128,20 @@ library API will work in restricted scripts without additional object rules.
 
 The ZMI panel **does not run pip, install packages, or repair dependencies**.
 Package names and import names can differ: install `Pillow`, import `PIL.Image`.
+
+Verify what the Zope environment actually sees before restarting:
+
+```sh
+/path/to/zope-venv/bin/python -m pip show Pillow reportlab huBarcode
+/path/to/zope-venv/bin/python -m pip check
+/path/to/zope-venv/bin/python -c "import PIL; print('Pillow', PIL.__version__)"
+/path/to/zope-venv/bin/python -c "import reportlab; print('ReportLab', reportlab.Version)"
+```
+
+It is normal for `pip show` to report a package as absent when you intentionally
+did not install it. For a custom module, consult that module's official
+documentation to identify its distribution name and supported installation
+command; EnableScripts cannot safely infer that mapping in every case.
 
 ## 4. Restart Zope and open the panel
 
