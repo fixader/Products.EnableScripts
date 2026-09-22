@@ -53,7 +53,7 @@ from the repository, or use a wheel you built from it. This command pins the
 0.2.2 implementation to a specific commit and requires Git:
 
 ```sh
-/path/to/zope-venv/bin/python -m pip install "Products.EnableScripts @ git+https://github.com/fixader/Products.EnableScripts.git@5bce23a0844f0ecb7e0e46299ee7ecd60216895b"
+/path/to/zope-venv/bin/python -m pip install "Products.EnableScripts @ git+https://github.com/fixader/Products.EnableScripts.git@e2366c2dffe47c416e076fe80cd1b802d136eb4e"
 ```
 
 Or install a local wheel:
@@ -203,7 +203,7 @@ used for the Python 3.8/Zope 5.8.3 deployment without upgrading its live setupto
    /path/to/egg-build-env/bin/python -m pip install --upgrade pip "setuptools>=61" wheel
    git clone https://github.com/fixader/Products.EnableScripts.git /path/to/enablescripts-source
    cd /path/to/enablescripts-source
-   git checkout 5bce23a0844f0ecb7e0e46299ee7ecd60216895b
+   git checkout e2366c2dffe47c416e076fe80cd1b802d136eb4e
    /path/to/egg-build-env/bin/python -c "from setuptools import setup; setup(script_args=['bdist_egg'])"
    ```
 
