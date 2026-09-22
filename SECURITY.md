@@ -45,6 +45,23 @@
 * Custom rules authorize exact object types and explicit public names. They are
   not argument validation and do not guarantee arbitrary libraries will work.
 
+## Choosing the boundary
+
+EnableScripts is intended for educational exploration, rapid prototyping and
+other environments with a small, controlled group of trusted script authors.
+Group size does not limit what an allowed library can do. If any affected author
+is untrusted, use an appropriately isolated environment or a narrower interface.
+
+A reviewed External Method or filesystem product can expose a specific operation
+with argument validation and permission checks, rather than broad library access.
+External Methods execute unrestricted code too; their safety depends on their
+implementation, not their name.
+
+The administrator accepts responsibility for the grants and their consequences.
+The software is provided as is, without warranty, under the disclaimer and
+limitation of liability in [LICENSE](LICENSE). No security guarantee is made for
+an arbitrary library or a particular deployment.
+
 ## Administration and persistence
 
 The panel explicitly requires Manager at the Zope application root. Changes use

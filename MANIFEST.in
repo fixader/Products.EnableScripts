@@ -1,4 +1,4 @@
-include README.md README.en.md SECURITY.md LICENSE RELEASING.md CHANGELOG.md
+include INSTALL.md README.md README.en.md SECURITY.md LICENSE RELEASING.md CHANGELOG.md
 recursive-include tests *.py
 recursive-include examples *.py
 recursive-include constraints *.txt

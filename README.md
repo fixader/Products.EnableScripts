@@ -1,11 +1,28 @@
 # Products.EnableScripts
 
-Granular, opt-in library access for **Zope 5 / 6 Script (Python)**, managed from
-the ZMI. Detect installed supported libraries, enable an integration, and expand
-its module choices. Each module lists its imports, objects, methods and attributes
-without separate checkboxes for every API member. Installation commands appear once per library, with Script (Python) import
-examples beside each module. ReportLab Canvas,
-Platypus, barcodes and PDF helpers are grouped together.
+**Explore Python libraries directly from Zope's Script (Python).**
+
+EnableScripts expands the capabilities available to restricted Python scripts in
+**Zope 5 and 6**. It lets an administrator expose selected installed libraries
+through a ZMI control panel, so script authors can use APIs that would otherwise
+commonly be accessed through an External Method or a filesystem product.
+
+The purpose is practical: shorten the path between an idea and a working
+experiment. Explore HTTPS connections, generate a PDF with ReportLab, manipulate
+images with Pillow, work with XML, or try another installed library without
+writing a new External Method wrapper for each experiment. Once the administrator
+has installed the libraries, configured access and restarted Zope, authors can
+iterate on their Script (Python) code through the ZMI.
+
+This can be especially useful for **teaching, learning, demonstrations and rapid
+prototyping**. It can also be a useful development tool on a server where the
+people who can create or edit scripts form a small, known and controlled group.
+A small group is not a security mechanism: every member must be trusted with the
+capabilities of the libraries you expose.
+
+EnableScripts intentionally widens access. It does not turn every Python package
+into a restricted library, guarantee compatibility with arbitrary APIs, or make
+untrusted code safe to run.
 
 > **RestrictedPython is restricted for a reason.**
 >
@@ -24,6 +41,82 @@ Platypus, barcodes and PDF helpers are grouped together.
 > them after restart. Independent Zope instances with separate processes and
 > settings are not automatically affected.
 
+## When this approach is useful
+
+* **Teaching and learning:** let trusted students or colleagues explore library
+  APIs from Script (Python), see results immediately, and compare approaches.
+  A shared teaching server still requires trust in every script author. Use
+  separate environments where that trust is not appropriate.
+* **Rapid development:** experiment with an HTTPS request, image transformation,
+  PDF layout or barcode without deploying a new filesystem wrapper for every
+  change to the experiment.
+* **Small, controlled teams:** give a known group access to selected libraries
+  when the administrator accepts the server-wide implications and controls who
+  can create or modify scripts.
+
+It is not suitable as a way to offer arbitrary Python execution to untrusted
+users, customers, tenants or students on a shared server. Do not enable a library
+because its name sounds harmless: review what its exposed APIs can actually do.
+
+## EnableScripts and External Methods
+
+An External Method is often a better choice when you want to expose **a narrow,
+reviewed operation**. For example, a wrapper can accept a document ID, validate
+it, and generate one specific report. It can keep file paths, network destinations
+and low-level library operations out of the script author's control.
+
+EnableScripts instead lets script authors call the selected library APIs directly.
+That flexibility is its purpose, and also its trade-off: permission to use a PDF
+or image library may include operations that read files, fetch URLs or consume
+substantial resources. A module checkbox does not validate the arguments passed
+to those operations.
+
+External Methods themselves run unrestricted Python and are **not automatically
+safe**. Their advantage is the opportunity to implement a smaller interface with
+explicit validation and permission checks. A wrapper that simply accepts any
+command, path or URL may offer little protection.
+
+A practical workflow is to explore an API with EnableScripts on a controlled test
+server, then decide whether the finished feature should remain available to
+trusted script authors or move behind an External Method or filesystem product
+with a carefully defined interface.
+
+## A first learning session
+
+1. Use a test server with data and operating-system permissions appropriate for
+   the experiment. Identify everyone who can create or edit restricted scripts
+   across all sites served by the affected Zope workers.
+2. Install only the libraries needed for the exercise into Zope's own Python
+   environment. EnableScripts configures access; it does not install packages
+   from the browser.
+3. Enable the required preset modules, save and restart every affected worker.
+   For an additional library, use **Advanced: custom libraries** to inspect its
+   exports and define any needed object rules before enabling it.
+4. Create a Script (Python) in a test folder. Use the import examples shown in
+   the panel and start with one small operation: create an in-memory image,
+   generate a one-page PDF, or make an HTTPS request to a destination you control
+   with an explicit timeout and bounded response size.
+5. Change the script and run it again. Ordinary edits to the script do not
+   require a Zope restart; changes to EnableScripts permissions do.
+6. When finished, disable unnecessary grants, save and restart all affected
+   workers. Review the experiment before turning it into an application feature.
+
+The PDF/image example below provides a concrete starting point. For network
+experiments, the HTTP / urllib preset includes URL-handling APIs; it is not an
+HTTPS-only allowlist and does not restrict which destinations scripts may reach.
+
+## Use at your own risk
+
+**You are responsible for what you enable, who can write scripts, and the
+consequences of those scripts.** This includes data loss, disclosure of sensitive
+information, service disruption and misuse of server resources.
+
+The author and contributors provide this software **as is, without warranty**,
+and accept no responsibility for consequences arising from its use. If you
+choose to expand RestrictedPython's capabilities, you do so at your own risk.
+See [LICENSE](LICENSE) for the applicable MIT warranty disclaimer and limitation
+of liability, and [SECURITY.md](SECURITY.md) for the security model and limitations.
+
 ## Features
 
 * **BytesIO**: binary file-like objects in memory, without enabling `io.open`.
@@ -33,6 +126,7 @@ Platypus, barcodes and PDF helpers are grouped together.
 * **Helpers**: PdfBuffer, ImageBuffer, PDF/image responses, saving Zope images.
 * **Extended io compatibility**: a separate choice for other io exports, including filesystem APIs.
 * Manager-only settings with POST and CSRF checks, persisted in the ZODB.
+* **Advanced custom libraries:** inspect installed modules, select exports and define explicit object rules.
 * Extension entry points for additional explicitly supported libraries.
 
 Libraries start **disabled**. Their individual subchoices default to enabled, so
@@ -47,6 +141,10 @@ mean that Zope 6 can run on it. The Python 3.8 test environment uses Zope 5.8.3
 and Pillow 10.4 with ReportLab below 4.4.3; newer environments continue to test Zope 5 and Zope 6.
 
 ## Install
+
+Follow [INSTALL.md](INSTALL.md) for step-by-step virtualenv and buildout setup,
+optional libraries, custom access rules, restarts, removal and troubleshooting.
+
 
 Install into Zope's Python environment from a wheel or source checkout:
 
@@ -104,6 +202,10 @@ eggs =
     Pillow
     reportlab
 ```
+
+For older buildout/setuptools versions, use the local-egg procedure in
+[INSTALL.md](INSTALL.md#buildout-retain-the-installation-across-rebuilds) instead
+of assuming a pyproject-only development checkout will work.
 
 Merge these entries into your existing buildout. Product code is reproducibly
 installed by buildout; saved selections survive in the preserved ZODB.
@@ -181,7 +283,7 @@ attribute assignment.
 ## Development and publishing
 
 ```sh
-python -m pip install -e '.[all,test]'
+python -m pip install '.[all,test]'
 python -m pytest -q
 python -m build
 python -m twine check dist/*
@@ -193,9 +295,7 @@ use ZODB >= 6.3, which supplies that key. Separate constraint files are provided
 for these upstream combinations; this is not an EnableScripts data format requirement.
 
 See [RELEASING.md](https://github.com/fixader/Products.EnableScripts/blob/main/RELEASING.md)
-for the manual PyPI Trusted Publishing workflow, and
-[README.md](https://github.com/fixader/Products.EnableScripts/blob/main/README.md)
-for Norwegian instructions and the integration extension API.
+for the manual PyPI Trusted Publishing workflow.
 
 MIT licensed. Early release: validate your actual scripts on a test server
 before deploying it to production.
