@@ -1,8 +1,12 @@
-# Products.EnableScripts
+# Products.RestrictedPythonExtensions
 
 **Explore Python libraries directly from Zope's Script (Python).**
 
-EnableScripts expands the capabilities available to restricted Python scripts in
+Products.RestrictedPythonExtensions is an independent Zope product. It is not
+affiliated with or maintained by the RestrictedPython project or the Zope
+Foundation.
+
+RestrictedPythonExtensions expands the capabilities available to restricted Python scripts in
 **Zope 5 and 6**. It lets an administrator expose selected installed libraries
 through a ZMI control panel, so script authors can use APIs that would otherwise
 commonly be accessed through an External Method or a filesystem product.
@@ -20,26 +24,26 @@ people who can create or edit scripts form a small, known and controlled group.
 A small group is not a security mechanism: every member must be trusted with the
 capabilities of the libraries you expose.
 
-EnableScripts intentionally widens access. It does not turn every Python package
+RestrictedPythonExtensions intentionally widens access. It does not turn every Python package
 into a restricted library, guarantee compatibility with arbitrary APIs, or make
 untrusted code safe to run.
 
 ## What this product includes — and what it does not
 
-EnableScripts does **not** contain, redistribute or automatically install Pillow,
+RestrictedPythonExtensions does **not** contain, redistribute or automatically install Pillow,
 ReportLab, Hubarcode, or any other optional application library it can expose. It only provides Zope security
 declarations and management controls that can expose selected APIs from
 libraries already installed separately in the Python environment used by Zope.
 
-Installing EnableScripts gives you no license or other right to use a third-party
+Installing RestrictedPythonExtensions gives you no license or other right to use a third-party
 library. You are responsible for obtaining each library from its own publisher
 and complying with its license, copyright terms, commercial terms, export
 restrictions and other applicable requirements. Those libraries remain the work
 and responsibility of their respective authors and distributors. The
-EnableScripts author does not supply, license, endorse or accept responsibility
+RestrictedPythonExtensions author does not supply, license, endorse or accept responsibility
 for them.
 
-What EnableScripts can do is make compatible libraries easier and more enjoyable
+What RestrictedPythonExtensions can do is make compatible libraries easier and more enjoyable
 to explore from Script (Python): it shows useful imports and supported APIs,
 provides tested presets, and lets trusted users experiment quickly in the ZMI.
 Install every library independently before trying to enable it here.
@@ -49,7 +53,7 @@ Install every library independently before trying to enable it here.
 This is not only a classroom experiment. The author has used equivalent
 GlobalModule-style integrations in substantial Zope software solutions since the
 Zope 2 era. That approach has supported production systems generating hundreds
-of thousands of PDFs and images. EnableScripts turns those years of practical
+of thousands of PDFs and images. RestrictedPythonExtensions turns those years of practical
 experience into an installable product with explicit controls, visible API
 descriptions, persistent settings and much clearer warnings about the trust
 boundary.
@@ -91,7 +95,7 @@ does not remove the administrator's responsibility for those choices.
   when the administrator accepts the server-wide implications and controls who
   can create or modify scripts.
 * **Controlled environments with strong external access boundaries:**
-  EnableScripts can provide an exceptionally direct and productive development
+  RestrictedPythonExtensions can provide an exceptionally direct and productive development
   workflow when access to Zope management and Script (Python) editing is tightly
   controlled. Suitable controls may include keeping management interfaces
   unreachable by ordinary remote users, network segmentation, carefully designed
@@ -100,7 +104,7 @@ does not remove the administrator's responsibility for those choices.
 
 These measures must reliably prevent untrusted people from creating or modifying
 scripts anywhere in the affected Zope processes. They reduce who can reach the
-capability; they do not make an exposed library safe or turn EnableScripts into
+capability; they do not make an exposed library safe or turn RestrictedPythonExtensions into
 a sandbox. Used by an administrator who understands the process-wide security
 grants and the surrounding architecture, this approach can offer extraordinary
 ease and speed of development. You need to understand exactly what you are
@@ -110,14 +114,14 @@ It is not suitable as a way to offer arbitrary Python execution to untrusted
 users, customers, tenants or students on a shared server. Do not enable a library
 because its name sounds harmless: review what its exposed APIs can actually do.
 
-## EnableScripts and External Methods
+## RestrictedPythonExtensions and External Methods
 
 An External Method is often a better choice when you want to expose **a narrow,
 reviewed operation**. For example, a wrapper can accept a document ID, validate
 it, and generate one specific report. It can keep file paths, network destinations
 and low-level library operations out of the script author's control.
 
-EnableScripts instead lets script authors call the selected library APIs directly.
+RestrictedPythonExtensions instead lets script authors call the selected library APIs directly.
 That flexibility is its purpose, and also its trade-off: permission to use a PDF
 or image library may include operations that read files, fetch URLs or consume
 substantial resources. A module checkbox does not validate the arguments passed
@@ -128,7 +132,7 @@ safe**. Their advantage is the opportunity to implement a smaller interface with
 explicit validation and permission checks. A wrapper that simply accepts any
 command, path or URL may offer little protection.
 
-A practical workflow is to explore an API with EnableScripts on a controlled test
+A practical workflow is to explore an API with RestrictedPythonExtensions on a controlled test
 server, then decide whether the finished feature should remain available to
 trusted script authors or move behind an External Method or filesystem product
 with a carefully defined interface.
@@ -139,7 +143,7 @@ with a carefully defined interface.
    the experiment. Identify everyone who can create or edit restricted scripts
    across all sites served by the affected Zope workers.
 2. Install only the libraries needed for the exercise into Zope's own Python
-   environment. EnableScripts configures access; it does not install packages
+   environment. RestrictedPythonExtensions configures access; it does not install packages
    from the browser.
 3. Enable the required preset modules, save and restart every affected worker.
    For an additional library, use **Advanced: custom libraries** to inspect its
@@ -149,7 +153,7 @@ with a carefully defined interface.
    generate a one-page PDF, or make an HTTPS request to a destination you control
    with an explicit timeout and bounded response size.
 5. Change the script and run it again. Ordinary edits to the script do not
-   require a Zope restart; changes to EnableScripts permissions do.
+   require a Zope restart; changes to RestrictedPythonExtensions permissions do.
 6. When finished, disable unnecessary grants, save and restart all affected
    workers. Review the experiment before turning it into an application feature.
 
@@ -187,7 +191,7 @@ the parent is disabled. Dependencies such as BytesIO are selected automatically.
 
 ## Compatibility
 
-EnableScripts supports Python 3.8+ with Zope 5.8+ or Zope 6, using a Python
+RestrictedPythonExtensions supports Python 3.8+ with Zope 5.8+ or Zope 6, using a Python
 version supported by the chosen Zope release. Supporting Python 3.8 does not
 mean that Zope 6 can run on it. The Python 3.8 test environment uses Zope 5.8.3
 and Pillow 10.4 with ReportLab below 4.4.3; newer environments continue to test Zope 5 and Zope 6.
@@ -201,14 +205,14 @@ optional libraries, custom access rules, restarts, removal and troubleshooting.
 Install into Zope's Python environment from a wheel or source checkout:
 
 ```sh
-python -m pip install /path/to/products_enablescripts-0.2.2-py3-none-any.whl
+python -m pip install /path/to/products_restrictedpythonextensions-0.3.0-py3-none-any.whl
 # Or install the base product from a source checkout:
 python -m pip install .
 ```
 
-Once published on PyPI, the package name is `Products.EnableScripts`.
+Once published on PyPI, the package name is `Products.RestrictedPythonExtensions`.
 Install Pillow, ReportLab and every other library separately, under their own
-licenses and terms. EnableScripts never installs third-party libraries from the
+licenses and terms. RestrictedPythonExtensions never installs third-party libraries from the
 package or the ZMI.
 
 Common installation commands, using the Python environment that runs Zope:
@@ -229,14 +233,14 @@ python -m pip install "huBarcode==1.0.0"
 
 `io`/BytesIO, XML, urllib/HTTP and `decimal` come with Python and require no
 separate package. PDF helpers and permission-checked Zope image saving come with
-EnableScripts. See the [package-by-package installation matrix](INSTALL.md#3-install-only-the-extra-libraries-you-need)
+RestrictedPythonExtensions. See the [package-by-package installation matrix](INSTALL.md#3-install-only-the-extra-libraries-you-need)
 for the preset mapping, verification commands, upstream project links and the
 additional repair required by legacy Hubarcode.
 
-Restart Zope, then open **Control Panel → EnableScripts**:
+Restart Zope, then open **Control Panel → RestrictedPythonExtensions**:
 
 ```text
-/Control_Panel/EnableScripts/manage_main
+/Control_Panel/RestrictedPythonExtensions/manage_main
 ```
 
 1. Sign in as a Manager at the Zope application root and open the panel.
@@ -258,7 +262,7 @@ Restart Zope, then open **Control Panel → EnableScripts**:
 
 To revoke a preset grant, uncheck the library or module and save. To revoke a
 custom grant, disable or remove its saved entry. **Restart every worker in both
-cases**: old grants remain active until restart. Removing EnableScripts cannot
+cases**: old grants remain active until restart. Removing RestrictedPythonExtensions cannot
 revoke overlapping grants from another product or equivalent access through
 another enabled library.
 
@@ -267,13 +271,13 @@ directories and include it in `develop` and the instance `eggs`:
 
 ```ini
 [buildout]
-develop = src/Products.EnableScripts
+develop = src/Products.RestrictedPythonExtensions
 
 [instance]
 eggs =
     Zope
     Products.PythonScripts
-    Products.EnableScripts
+    Products.RestrictedPythonExtensions
     Pillow
     reportlab
 ```
@@ -306,7 +310,7 @@ return output.getvalue()
 ```
 
 Helpers are available separately, e.g.
-`from Products.EnableScripts import ImageBuffer, PdfBuffer`.
+`from Products.RestrictedPythonExtensions import ImageBuffer, PdfBuffer`.
 
 ## Advanced: custom libraries
 
@@ -316,7 +320,7 @@ public exports, and save the names you want scripts to import. No package is
 installed from this screen. Package names and import names may differ.
 
 Inspection imports the module as ordinary Python code, so only inspect trusted
-libraries. Inspection itself adds no EnableScripts security declarations.
+libraries. Inspection itself adds no RestrictedPythonExtensions security declarations.
 New entries are disabled by default. Enable the saved entry and restart every
 worker to apply it. Editing, disabling or removing an entry also requires a
 restart; the panel displays the policy currently active in that process.
@@ -343,7 +347,7 @@ selections are saved independently in ZODB.
 
 Disable previous GlobalModule / GlobalModules assertion products before
 migrating. This product cannot revoke grants made elsewhere. Existing helper
-imports from `Products.GlobalModule` must be changed to `Products.EnableScripts`;
+imports from `Products.GlobalModule` must be changed to `Products.RestrictedPythonExtensions`;
 normal imports from `PIL`, `reportlab`, `io`, etc. keep their names.
 
 Known legacy ReportLab module exports and Canvas/ImageReader methods are
@@ -367,9 +371,9 @@ python -m twine check dist/*
 Use a Zope-compatible dependency set. Zope 5.14.2 tests use ZODB < 6.3 because
 the `class-factory` configuration key is defined by Zope itself. Zope 6.1 tests
 use ZODB >= 6.3, which supplies that key. Separate constraint files are provided
-for these upstream combinations; this is not an EnableScripts data format requirement.
+for these upstream combinations; this is not a RestrictedPythonExtensions data format requirement.
 
-See [RELEASING.md](https://github.com/fixader/Products.EnableScripts/blob/main/RELEASING.md)
+See [RELEASING.md](https://github.com/fixader/Products.RestrictedPythonExtensions/blob/main/RELEASING.md)
 for the manual PyPI Trusted Publishing workflow.
 
 MIT licensed. Early release: validate your actual scripts on a test server

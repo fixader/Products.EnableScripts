@@ -6,7 +6,7 @@ from PIL import Image
 import pytest
 from zExceptions import Unauthorized
 
-from Products.EnableScripts import zope_helpers
+from Products.RestrictedPythonExtensions import zope_helpers
 
 
 class ImageFolder(Folder):

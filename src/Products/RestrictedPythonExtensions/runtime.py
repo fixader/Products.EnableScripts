@@ -11,7 +11,7 @@ from AccessControl.SimpleObjectPolicies import allow_type
 from .policy import allowed_members, module_groups, object_key, symbol_key
 from .registry import FEATURES, availability, expand, prepare, resolve
 
-logger = logging.getLogger("Products.EnableScripts")
+logger = logging.getLogger("Products.RestrictedPythonExtensions")
 ACTIVE = set()
 ERRORS = {}
 SNAPSHOT = None
@@ -31,7 +31,7 @@ def activate(enabled=(), disabled=(), custom=(), custom_enabled=()):
     current = snapshot(enabled, disabled, custom, custom_enabled)
     if SNAPSHOT is not None:
         if current != SNAPSHOT:
-            raise RuntimeError("EnableScripts policy changed; restart this Zope process")
+            raise RuntimeError("RestrictedPythonExtensions policy changed; restart this Zope process")
         return
     disabled = set(disabled)
     for feature in features.values():
@@ -78,11 +78,11 @@ def activate(enabled=(), disabled=(), custom=(), custom_enabled=()):
         for path, (cls, names) in zip(type_paths, types):
             # Built-in C types such as BytesIO cannot have class attributes set.
             allow_type(cls, allowed_members(path, names, disabled))
-        package = import_module("Products.EnableScripts")
-        security = ModuleSecurityInfo("Products.EnableScripts")
+        package = import_module("Products.RestrictedPythonExtensions")
+        security = ModuleSecurityInfo("Products.RestrictedPythonExtensions")
         for name, value in exports.items():
             setattr(package, name, value)
-            denied = (symbol_key("Products.EnableScripts", name) in disabled or
+            denied = (symbol_key("Products.RestrictedPythonExtensions", name) in disabled or
                       any(value is cls for cls in denied_objects))
             if denied:
                 security.declarePrivate(name)
@@ -93,7 +93,7 @@ def activate(enabled=(), disabled=(), custom=(), custom_enabled=()):
         for module_name in feature.modules:
             secureModule(module_name)
         if exports:
-            secureModule("Products.EnableScripts")
+            secureModule("Products.RestrictedPythonExtensions")
         ACTIVE.add(key)
         logger.info("Enabled %s (process %s)", feature.title, PROCESS_ID)
     SNAPSHOT = current

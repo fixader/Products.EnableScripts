@@ -31,7 +31,7 @@ print(repair(folder/'hubarcode/datamatrix', folder/'backup', apply=True))
 from hubarcode.datamatrix import DataMatrixEncoder
 from hubarcode.datamatrix.textencoder import TextEncoder
 assert [ord(c) for c in TextEncoder().encode('hi')] == [105,106,129,74,235,130,61,159]
-for value in ['banana', 'EnableScripts', '12345678901234567890', '\\u00c6\\u00d8\\u00c5', 'A'*44]:
+for value in ['banana', 'RestrictedPythonExtensions', '12345678901234567890', '\\u00c6\\u00d8\\u00c5', 'A'*44]:
     data=DataMatrixEncoder(value).get_imagedata()
     decoded=zxingcpp.read_barcode(Image.open(BytesIO(data)))
     assert decoded is not None and decoded.bytes == value.encode('latin-1')
@@ -42,7 +42,7 @@ for value in ['A'*45, '\\U0001f600']:
         pass
     else:
         raise AssertionError('Invalid input was accepted')
-from Products.EnableScripts.runtime import activate
+from Products.RestrictedPythonExtensions.runtime import activate
 from Products.PythonScripts.PythonScript import PythonScript
 activate(('hubarcode',))
 script=PythonScript('hubarcode_test')

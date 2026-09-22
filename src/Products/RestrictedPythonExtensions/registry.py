@@ -89,11 +89,13 @@ def expand(keys, features=None):
 
 def load_extensions():
     """Trusted installed eggs may contribute a callable returning Features."""
-    entries = metadata.entry_points()
-    if hasattr(entries, "select"):
-        entries = entries.select(group="enablescripts.integrations")
+    discovered = metadata.entry_points()
+    groups = ("restrictedpythonextensions.integrations", "enablescripts.integrations")
+    if hasattr(discovered, "select"):
+        entries = [entry for group in groups for entry in discovered.select(group=group)]
     else:  # Python 3.8/3.9 importlib.metadata returns a dictionary.
-        entries = entries.get("enablescripts.integrations", ())
-    for entry in sorted(entries, key=lambda item: item.name):
+        entries = [entry for group in groups for entry in discovered.get(group, ())]
+    unique = {(entry.name, entry.value): entry for entry in entries}
+    for entry in sorted(unique.values(), key=lambda item: (item.name, item.value)):
         for feature in entry.load()():
             register(feature)

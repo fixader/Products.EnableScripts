@@ -5,7 +5,7 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.utils import ImageReader
 
 image = Image.new("RGB", (400, 150), "white")
-ImageDraw.Draw(image).text((20, 20), "Hello from EnableScripts", fill="black")
+ImageDraw.Draw(image).text((20, 20), "Hello from RestrictedPythonExtensions", fill="black")
 output = BytesIO()
 canvas = Canvas(output)
 canvas.drawImage(ImageReader(image), 30, 550, width=400, height=150)

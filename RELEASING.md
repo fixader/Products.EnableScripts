@@ -9,9 +9,9 @@ Sign in to your PyPI account and create a pending publisher:
 
 | Field | Value |
 |---|---|
-| Project name | `Products.EnableScripts` |
+| Project name | `Products.RestrictedPythonExtensions` |
 | Owner | `fixader` |
-| Repository | `Products.EnableScripts` |
+| Repository | `Products.RestrictedPythonExtensions` |
 | Workflow | `publish.yml` |
 | Environment | `pypi` |
 

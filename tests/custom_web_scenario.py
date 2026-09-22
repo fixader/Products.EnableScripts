@@ -16,8 +16,8 @@ if phase == 'initial':
                       (root / 'var/Data.fs').as_posix() + '\n</filestorage>\nmount-point /\n</zodb_db>\n')
 app = TestApp(make_wsgi_app({}, str(config)), extra_environ={'x-wsgiorg.throw_errors': False})
 import Zope2
-from Products.EnableScripts import runtime
-from Products.EnableScripts.settings import get_settings
+from Products.RestrictedPythonExtensions import runtime
+from Products.RestrictedPythonExtensions.settings import get_settings
 from scenario import run, denied
 if phase == 'initial':
     db = Zope2.app()
@@ -25,7 +25,7 @@ if phase == 'initial':
     db.acl_users._doAddUser('reader', 'password', [], [])
     transaction.commit(); db._p_jar.close()
 headers = {'Authorization': 'Basic ' + base64.b64encode(b'manager:password').decode()}
-base = '/Control_Panel/EnableScripts/'
+base = '/Control_Panel/RestrictedPythonExtensions/'
 def page():
     return app.get(base+'manage_main', headers=headers)
 def token():

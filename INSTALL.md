@@ -1,15 +1,15 @@
-# Installing and using EnableScripts
+# Installing and using RestrictedPythonExtensions
 
-EnableScripts lets trusted authors explore libraries directly from Zope's
+RestrictedPythonExtensions lets trusted authors explore libraries directly from Zope's
 Script (Python), including operations often placed in External Methods: HTTPS
 requests, PDF generation, image processing and more. It is useful for education
 and rapid development where script-writing access is small and controlled.
 
-EnableScripts itself contains and automatically installs none of the optional
+RestrictedPythonExtensions itself contains and automatically installs none of the optional
 application libraries it can expose. Pillow, ReportLab, Hubarcode and every additional package must be obtained and installed
 separately. Their own licenses and terms govern their use; installing
-EnableScripts does not provide, replace or extend those rights. The respective
-authors and distributors remain responsible for their libraries. EnableScripts
+RestrictedPythonExtensions does not provide, replace or extend those rights. The respective
+authors and distributors remain responsible for their libraries. RestrictedPythonExtensions
 only makes selected APIs from already installed software available to restricted
 scripts.
 
@@ -40,29 +40,29 @@ Buildout may keep packages in its `eggs` directory rather than ordinary
 site-packages, so `pip show` alone is not conclusive there. Check buildout's
 configuration and generated instance script as well.
 
-EnableScripts requires Python 3.8+ and Zope 5.8+ or Zope 6. Your Zope release must
+RestrictedPythonExtensions requires Python 3.8+ and Zope 5.8+ or Zope 6. Your Zope release must
 also support your Python version: this does not make Zope 6 compatible with
 Python 3.8. Preserve your existing Zope dependency pins. Back up configuration
 and the ZODB using your deployment's normal backup procedure before changing a
 server you rely on; try the installation on a test server first.
 
-## 2. Install EnableScripts, without optional libraries
+## 2. Install RestrictedPythonExtensions, without optional libraries
 
 At the time of this guide, the package has not been published on PyPI. Install
-from the repository, or use a wheel you built from it. This command pins the
-0.2.2 implementation to a specific commit and requires Git:
+from the repository, or use a wheel you built from it. During development, this
+command installs the current main branch and requires Git:
 
 ```sh
-/path/to/zope-venv/bin/python -m pip install "Products.EnableScripts @ git+https://github.com/fixader/Products.EnableScripts.git@e2366c2dffe47c416e076fe80cd1b802d136eb4e"
+/path/to/zope-venv/bin/python -m pip install "Products.RestrictedPythonExtensions @ git+https://github.com/fixader/Products.RestrictedPythonExtensions.git@main"
 ```
 
 Or install a local wheel:
 
 ```sh
-/path/to/zope-venv/bin/python -m pip install /path/to/products_enablescripts-0.2.2-py3-none-any.whl
+/path/to/zope-venv/bin/python -m pip install /path/to/products_restrictedpythonextensions-0.3.0-py3-none-any.whl
 ```
 
-These commands install EnableScripts and resolve its required Zope dependencies;
+These commands install RestrictedPythonExtensions and resolve its required Zope dependencies;
 they do not request the optional Pillow or ReportLab libraries. Use your normal
 constraints file with pip if your deployment pins dependencies. In an already
 validated environment, `--no-deps` prevents dependency changes, but then you must
@@ -79,13 +79,13 @@ installation is not a replacement for recording the package in buildout.
 Install these into the same Python environment. No installation is needed for
 standard-library modules such as `io`, `xml`, `urllib` or `decimal`.
 
-| EnableScripts integration | What must be installed separately | What it enables |
+| RestrictedPythonExtensions integration | What must be installed separately | What it enables |
 | --- | --- | --- |
 | BytesIO | Nothing; `io` is in Python's standard library | In-memory binary streams used by PDFs and images |
 | Pillow and Image helpers | [Pillow](https://pillow.readthedocs.io/en/stable/installation/index.html) | `PIL.Image`, drawing, fonts, transformations and `ImageBuffer` |
 | ReportLab Canvas, Platypus and ReportLab barcodes | [ReportLab](https://pypi.org/project/reportlab/) | PDF canvas, document layout, fonts, page sizes and supported barcodes |
-| PDF helpers | Nothing beyond EnableScripts; ReportLab is needed only when your script uses ReportLab to create the PDF | `PdfBuffer` and PDF response handling |
-| Save images in Zope | Nothing beyond EnableScripts | Permission-checked creation or replacement of Zope Image objects |
+| PDF helpers | Nothing beyond RestrictedPythonExtensions; ReportLab is needed only when your script uses ReportLab to create the PDF | `PdfBuffer` and PDF response handling |
+| Save images in Zope | Nothing beyond RestrictedPythonExtensions | Permission-checked creation or replacement of Zope Image objects |
 | XML / ElementTree | Nothing; included with Python | XML parsing and element APIs |
 | HTTP / urllib | Nothing; included with Python | URL parsing and HTTP/HTTPS client APIs |
 | Extended `io` | Nothing; included with Python | Other `io` APIs, including filesystem access |
@@ -94,7 +94,7 @@ standard-library modules such as `io`, `xml`, `urllib` or `decimal`.
 
 The links above lead to the libraries' own installation/project information.
 Review each project's current Python support, dependencies, license and release
-notes before choosing a version. EnableScripts' tested presets describe an API
+notes before choosing a version. RestrictedPythonExtensions' tested presets describe an API
 surface; they do not replace the upstream installation documentation.
 
 ```sh
@@ -118,9 +118,9 @@ preferred choice when it supports the barcode type you need.
 
 These commands can upgrade existing libraries. Review their compatibility with
 your application before running them. They are optional: you can install only
-EnableScripts first and inspect which existing libraries are available.
+RestrictedPythonExtensions first and inspect which existing libraries are available.
 
-EnableScripts deliberately has no convenience extra that installs these
+RestrictedPythonExtensions deliberately has no convenience extra that installs these
 libraries. Install each desired package explicitly so its source, version and
 license are visible in your deployment configuration. Other packages are
 installed in the same manner, then configured through Advanced; not every
@@ -141,7 +141,7 @@ Verify what the Zope environment actually sees before restarting:
 It is normal for `pip show` to report a package as absent when you intentionally
 did not install it. For a custom module, consult that module's official
 documentation to identify its distribution name and supported installation
-command; EnableScripts cannot safely infer that mapping in every case.
+command; RestrictedPythonExtensions cannot safely infer that mapping in every case.
 
 ## 4. Restart Zope and open the panel
 
@@ -155,10 +155,10 @@ sudo systemctl restart zope-instance.service
 Sign in as a Manager at the Zope application root and open:
 
 ```text
-http://YOUR-SERVER:PORT/Control_Panel/EnableScripts/manage_main
+http://YOUR-SERVER:PORT/Control_Panel/RestrictedPythonExtensions/manage_main
 ```
 
-EnableScripts appears in the Zope Control Panel, not Plone's add-on installer.
+RestrictedPythonExtensions appears in the Zope Control Panel, not Plone's add-on installer.
 Libraries initially remain disabled. Installed, supported libraries are available
 for selection; missing or incompatible ones show an error and cannot be newly
 enabled. Installing a library does not itself grant restricted scripts access.
@@ -177,7 +177,7 @@ enabled. Installing a library does not itself grant restricted scripts access.
    and start with a small operation. See the [PDF/image example](README.md#example-a-restricted-python-script).
 
 After the grants are active, ordinary script edits do not require restarts.
-Changing EnableScripts permissions does. For HTTPS experiments, use a destination
+Changing RestrictedPythonExtensions permissions does. For HTTPS experiments, use a destination
 you control, an explicit timeout and a bounded response size. The urllib preset
 is not an HTTPS-only or destination-restricted policy.
 
@@ -188,7 +188,7 @@ Scroll to **Advanced: custom libraries**, or append `#advanced` to the panel URL
 1. Install the package in Zope's environment and restart as needed.
 2. Enter the importable module name and click **Inspect module**. Inspection
    imports trusted installed code and may execute initialization with side
-   effects; it does not add EnableScripts permission grants.
+   effects; it does not add RestrictedPythonExtensions permission grants.
 3. Review the detected exports and remove names you do not want to expose.
 4. Add explicit class rules if returned objects need method or attribute access.
    For example, inspect `decimal`, retain the export `Decimal`, and enter:
@@ -215,13 +215,13 @@ upgrades may still change the behavior of functions you have already allowed.
 ## Buildout: retain the installation across rebuilds
 
 Keep source or local distributions outside generated `parts` directories. Add
-EnableScripts to the **existing** instance's eggs, preserving its current entries:
+RestrictedPythonExtensions to the **existing** instance's eggs, preserving its current entries:
 
 ```ini
 [Instance]
 eggs =
     ... existing entries ...
-    Products.EnableScripts==0.2.2
+    Products.RestrictedPythonExtensions==0.3.0
 ```
 
 The ellipsis above is explanatory; do not paste it into your configuration.
@@ -230,7 +230,7 @@ Only add Pillow, ReportLab or another library if you want buildout to install an
 manage it. Preserve the versions required by your application.
 
 Since this version is not on PyPI, buildout also needs a source for the package.
-A modern source-development setup can use a checkout in `src/Products.EnableScripts`
+A modern source-development setup can use a checkout in `src/Products.RestrictedPythonExtensions`
 with a corresponding `develop` entry. Older buildout/setuptools installations may
 not understand a pyproject-only source tree. The following local-egg method was
 used for the Python 3.8/Zope 5.8.3 deployment without upgrading its live setuptools:
@@ -241,13 +241,13 @@ used for the Python 3.8/Zope 5.8.3 deployment without upgrading its live setupto
    ```sh
    python3.8 -m venv /path/to/egg-build-env
    /path/to/egg-build-env/bin/python -m pip install --upgrade pip "setuptools>=61" wheel
-   git clone https://github.com/fixader/Products.EnableScripts.git /path/to/enablescripts-source
-   cd /path/to/enablescripts-source
-   git checkout e2366c2dffe47c416e076fe80cd1b802d136eb4e
+   git clone https://github.com/fixader/Products.RestrictedPythonExtensions.git /path/to/restrictedpythonextensions-source
+   cd /path/to/restrictedpythonextensions-source
+   git checkout main
    /path/to/egg-build-env/bin/python -c "from setuptools import setup; setup(script_args=['bdist_egg'])"
    ```
 
-2. Copy the generated `dist/Products.EnableScripts-0.2.2-py3.8.egg` into your
+2. Copy the generated `dist/Products.RestrictedPythonExtensions-0.3.0-py3.8.egg` into your
    buildout's local `downloads` directory. Retain it with your deployment files.
 3. Add that directory to the existing `[buildout] find-links` list:
 
@@ -272,20 +272,40 @@ To revoke access, uncheck the preset module/library, or disable/remove the custo
 policy, then save and restart every worker. Existing grants remain until restart.
 Another enabled API or another product may still grant overlapping access.
 
-When updating EnableScripts, install the intended version, update buildout pins
+When updating RestrictedPythonExtensions, install the intended version, update buildout pins
 and local distributions if applicable, and restart all workers. Review saved
 settings and test actual scripts after library upgrades. Removing the package
 requires removing its buildout entry as well, then restarting; remove or adapt
 scripts that depend on it before doing so.
 
+### Migrating from Products.EnableScripts
+
+Remove the old distribution and install the renamed one in the same Python
+environment, then restart every Zope process:
+
+```sh
+/path/to/zope-venv/bin/python -m pip uninstall Products.EnableScripts
+/path/to/zope-venv/bin/python -m pip install "Products.RestrictedPythonExtensions @ git+https://github.com/fixader/Products.RestrictedPythonExtensions.git@main"
+```
+
+For buildout, replace `Products.EnableScripts` in the `eggs` list and any version
+pin with `Products.RestrictedPythonExtensions`, make the renamed distribution
+available through the existing `find-links` configuration when necessary, and
+run buildout before restarting. The renamed package includes a narrow compatibility
+module that reads settings persisted under the former product name. Existing
+enabled integrations and custom policies therefore carry over when the ZODB is
+retained. Change Script (Python) helper imports to
+`Products.RestrictedPythonExtensions`; the compatibility module does not retain
+the old public helper API.
+
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| No EnableScripts panel | Correct Python environment, instance eggs, startup log and completed restart. |
+| No RestrictedPythonExtensions panel | Correct Python environment, instance eggs, startup log and completed restart. |
 | No Advanced section | The server may run an older version. Advanced was introduced in 0.2.0. Check which server and port you opened. |
 | Package installed but unavailable | The error may indicate an incompatible API/version or a missing dependency, not a missing installation. |
 | Import works but a method is denied | Review the object's exact type and its explicit member rules; a returned subclass may need another rule. |
 | Saved changes have no effect | Restart every worker; a load balancer may still route to an old process. |
 | Disabling one API did not revoke equivalent access | Check overlapping preset/custom APIs and old GlobalModule/GlobalModules or other products. |
-| Buildout cannot find EnableScripts | Retain the pinned distribution in its configured find-links location; the package is not yet on PyPI. |
+| Buildout cannot find RestrictedPythonExtensions | Retain the pinned distribution in its configured find-links location; the package is not yet on PyPI. |

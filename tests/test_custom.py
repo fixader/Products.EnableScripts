@@ -16,10 +16,10 @@ def test_custom_policy_across_restarts(tmp_path):
 def test_unavailable_custom_library_does_not_break_startup():
     root = Path(__file__).resolve().parents[1]
     env = dict(os.environ, PYTHONPATH=str(root / 'src'))
-    code = '''from Products.EnableScripts import runtime
-record = ('enablescripts_missing_library', ('public',), ())
-runtime.activate(custom=(record,), custom_enabled=('enablescripts_missing_library',))
-assert 'custom:enablescripts_missing_library' in runtime.ERRORS
+    code = '''from Products.RestrictedPythonExtensions import runtime
+record = ('restrictedpythonextensions_missing_library', ('public',), ())
+runtime.activate(custom=(record,), custom_enabled=('restrictedpythonextensions_missing_library',))
+assert 'custom:restrictedpythonextensions_missing_library' in runtime.ERRORS
 assert not runtime.ACTIVE
 '''
     result = subprocess.run([sys.executable, '-c', code], env=env, capture_output=True, text=True)

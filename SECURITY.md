@@ -17,10 +17,10 @@
 > them after restart. Independent Zope instances with separate processes and
 > settings are not automatically affected.
 
-EnableScripts does not contain, redistribute or automatically install the
+RestrictedPythonExtensions does not contain, redistribute or automatically install the
 optional third-party libraries it can expose. Administrators obtain them separately and are solely
 responsible for complying with their licenses and other applicable terms.
-EnableScripts grants no license or usage right for those libraries, does not
+RestrictedPythonExtensions grants no license or usage right for those libraries, does not
 endorse them, and accepts no responsibility for their code or consequences.
 
 ## Scope of the grants
@@ -39,7 +39,7 @@ endorse them, and accepts no responsibility for their code or consequences.
   Alternative APIs can perform equivalent operations through other enabled modules.
 * Image/PDF parsing and rendering can consume substantial memory or CPU.
   Use deployment-level resource controls for untrusted inputs.
-* Other products may grant overlapping access. EnableScripts cannot guarantee
+* Other products may grant overlapping access. RestrictedPythonExtensions cannot guarantee
   revocation when another product, startup hook or trusted code changes policies.
 * A library upgrade can introduce new public names. Discovered preset exports in
   enabled modules default to enabled. Custom exports are frozen when saved, but
@@ -47,13 +47,13 @@ endorse them, and accepts no responsibility for their code or consequences.
   modules stay disabled. Review upgrades accordingly.
 * Inspecting a custom module imports it as ordinary Python code and can execute
   initialization with side effects. Inspect only trusted installed libraries.
-  Inspection itself does not add EnableScripts access declarations.
+  Inspection itself does not add RestrictedPythonExtensions access declarations.
 * Custom rules authorize exact object types and explicit public names. They are
   not argument validation and do not guarantee arbitrary libraries will work.
 
 ## Choosing the boundary
 
-EnableScripts is intended for educational exploration, rapid prototyping and
+RestrictedPythonExtensions is intended for educational exploration, rapid prototyping and
 other environments with a small, controlled group of trusted script authors.
 Group size does not limit what an allowed library can do. If any affected author
 is untrusted, use an appropriately isolated environment or a narrower interface.
@@ -82,7 +82,7 @@ functions does not add role-based access control inside those third-party APIs.
 ## Reporting
 
 Use the repository's private vulnerability reporting feature:
-https://github.com/fixader/Products.EnableScripts/security/advisories/new
+https://github.com/fixader/Products.RestrictedPythonExtensions/security/advisories/new
 
 For ordinary bugs, use GitHub Issues. Do not include credentials, real documents,
 customer data, or exploit details in a public issue.

@@ -90,20 +90,20 @@ register(Feature(
 register(Feature(
     "pdf_helpers", "PDF helpers", "PdfBuffer and send_pdf_response from your original GlobalModule.",
     requires=("bytesio",),
-    classes={"Products.EnableScripts.pdf_helpers:PdfBuffer": names("buffer write getvalue seek tell flush toResponse")},
-    exports={name: f"Products.EnableScripts.pdf_helpers:{name}" for name in ("PdfBuffer", "send_pdf_response")},
+    classes={"Products.RestrictedPythonExtensions.pdf_helpers:PdfBuffer": names("buffer write getvalue seek tell flush toResponse")},
+    exports={name: f"Products.RestrictedPythonExtensions.pdf_helpers:{name}" for name in ("PdfBuffer", "send_pdf_response")},
 ))
 
 register(Feature(
     "image_helpers", "Image helpers", "Your ImageBuffer drawing, text, resizing and response helpers.",
     distributions=("Pillow",), requires=("bytesio",),
-    classes={"Products.EnableScripts.image_helpers:ImageBuffer": names("image draw width height fromBytes resizeCanvas cropCanvas loadBytesAsCanvas loadZopeImage pasteRawImage pasteImage pasteImageBytes rectangle roundedRectangle line ellipse polygon textSize text rotatedText fitText multilineText getvalue toResponse")},
-    exports={"ImageBuffer": "Products.EnableScripts.image_helpers:ImageBuffer"},
+    classes={"Products.RestrictedPythonExtensions.image_helpers:ImageBuffer": names("image draw width height fromBytes resizeCanvas cropCanvas loadBytesAsCanvas loadZopeImage pasteRawImage pasteImage pasteImageBytes rectangle roundedRectangle line ellipse polygon textSize text rotatedText fitText multilineText getvalue toResponse")},
+    exports={"ImageBuffer": "Products.RestrictedPythonExtensions.image_helpers:ImageBuffer"},
 ))
 
 register(Feature(
     "zope_images", "Save images in Zope", "save_image_object, with Zope permission checks before replacement or creation.",
-    exports={"save_image_object": "Products.EnableScripts.zope_helpers:save_image_object"},
+    exports={"save_image_object": "Products.RestrictedPythonExtensions.zope_helpers:save_image_object"},
 ))
 
 # The supplied GlobalModule made *all* public names in these known modules

@@ -32,22 +32,22 @@ def _checkbox(name, value, label, checked=True, disabled=False):
             f'value="{escape(value, quote=True)}"{attributes}> {escape(label)}</label>')
 
 
-class EnableScriptsPanel(SimpleItem):
+class RestrictedPythonExtensionsPanel(SimpleItem):
     """Configure process-wide library access for restricted Zope scripts."""
 
-    id = "EnableScripts"
-    title = "EnableScripts"
-    meta_type = "EnableScripts settings"
+    id = "RestrictedPythonExtensions"
+    title = "RestrictedPythonExtensions"
+    meta_type = "RestrictedPythonExtensions settings"
     __roles__ = ("Manager",)
     security = ClassSecurityInfo()
     security.declareObjectProtected("Manage properties")
-    manage_options = ({"label": "EnableScripts", "action": "manage_main"},)
+    manage_options = ({"label": "RestrictedPythonExtensions", "action": "manage_main"},)
 
     def _require_manager(self):
         app = self.getPhysicalRoot()
         user = getSecurityManager().getUser()
         if "Manager" not in user.getRolesInContext(app):
-            raise Unauthorized("Only a root Manager can configure EnableScripts")
+            raise Unauthorized("Only a root Manager can configure RestrictedPythonExtensions")
         return app, user.getId() or user.getUserName()
 
     @zpublish
@@ -68,7 +68,7 @@ class EnableScriptsPanel(SimpleItem):
             content.append('<p class="notice">Restart required. Restart every Zope worker to apply these settings.</p>')
         content.append(f'<p>Current process: <strong>{runtime.PROCESS_ID}</strong>. Settings affect all sites in this process.</p>')
         content.append('<details class="feature"><summary>How to install, enable and disable libraries</summary>'
-                       '<ol><li>Install EnableScripts and any required library into the Python environment used by Zope. '
+                       '<ol><li>Install RestrictedPythonExtensions and any required library into the Python environment used by Zope. '
                        'The commands shown below must use that environment&#8217;s Python. With buildout, also retain '
                        'the packages in the instance eggs. This page does not install packages.</li>'
                        '<li>Restart Zope after installing packages, then return here. An unavailable library cannot '
@@ -100,7 +100,7 @@ class EnableScriptsPanel(SimpleItem):
                                '<p>Install in Zope&#8217;s Python environment: '
                                f'<code>{escape(reportlab_install)}</code><br>'
                                'One package provides Canvas, Platypus and the ReportLab barcode modules. '
-                               'PDF helpers are included with EnableScripts.</p>')
+                               'PDF helpers are included with RestrictedPythonExtensions.</p>')
                 reportlab_group = True
             elif reportlab_group and not is_reportlab:
                 content.append('</div>')
@@ -125,7 +125,7 @@ class EnableScriptsPanel(SimpleItem):
             elif key == "hubarcode":
                 install = "python -m pip install hubarcode==1.0.0"
             elif feature.exports:
-                install = "Included with Products.EnableScripts; no additional package needed."
+                install = "Included with Products.RestrictedPythonExtensions; no additional package needed."
             else:
                 install = "Python standard library; no additional package needed."
             if not is_reportlab:
@@ -141,7 +141,7 @@ class EnableScriptsPanel(SimpleItem):
                 if excluded and excluded != keys:
                     content.append('<p class="hint">Previously restricted individually. Left unchecked to preserve '
                                    'restrictions; checking this enables the whole listed API.</p>')
-                names = tuple(feature.exports) if module == "Products.EnableScripts" else feature.modules.get(module, ())
+                names = tuple(feature.exports) if module == "Products.RestrictedPythonExtensions" else feature.modules.get(module, ())
                 preferred = {"io": "BytesIO" if key == "bytesio" else "StringIO",
                              "reportlab.pdfgen.canvas": "Canvas", "reportlab.lib.utils": "ImageReader",
                              "reportlab.lib.pagesizes": "A4", "PIL.Image": "new", "PIL.ImageDraw": "Draw", "PIL.ImageFont": "truetype",
@@ -173,7 +173,7 @@ class EnableScriptsPanel(SimpleItem):
             content.append('</div>')
         content.append('<button type="submit">Save settings</button></form>')
         content.append('<p>Library access includes filesystem paths where supported. '
-                       'EnableScripts cannot revoke access granted by other products. '
+                       'RestrictedPythonExtensions cannot revoke access granted by other products. '
                        'Remove old GlobalModule/GlobalModules grants when migrating.</p>')
         content.append(self._advanced(settings, user_id))
         installed = sorted({(d.metadata.get("Name", "?"), d.version) for d in metadata.distributions()})
@@ -196,7 +196,7 @@ class EnableScriptsPanel(SimpleItem):
             raise Forbidden("Use POST to save settings")
         settings = get_settings(app)
         if settings is None or not settings.validate_token(user_id, token):
-            raise Forbidden("Invalid or stale form. Reload EnableScripts and try again.")
+            raise Forbidden("Invalid or stale form. Reload RestrictedPythonExtensions and try again.")
         groups = {key: keys for feature in FEATURES.values()
                   for key, (_, keys) in module_groups(feature).items()}
         checked = set(_items(modules))
@@ -239,7 +239,7 @@ class EnableScriptsPanel(SimpleItem):
                    '<li>Enter its importable module name, not necessarily its package name: for example, '
                    'the Pillow package uses PIL.Image. Existing preset modules must use their preset controls.</li>'
                    '<li>Click Inspect module. Review the detected exports and remove names you do not want to allow. '
-                   'Inspection grants no EnableScripts permissions, but importing a library can execute its startup code.</li>'
+                   'Inspection grants no RestrictedPythonExtensions permissions, but importing a library can execute its startup code.</li>'
                    '<li>If returned objects need access, add explicit class rules using the detected class names. '
                    'Start with only the methods and attributes your script needs.</li>'
                    '<li>Select Enable this module after restart and Save custom policy. Leaving it unchecked stores '
@@ -281,7 +281,7 @@ class EnableScriptsPanel(SimpleItem):
             raise Forbidden('Use POST for custom library changes or inspection')
         settings = get_settings(app)
         if settings is None or not settings.validate_token(user_id, token):
-            raise Forbidden('Invalid or stale form. Reload EnableScripts and try again.')
+            raise Forbidden('Invalid or stale form. Reload RestrictedPythonExtensions and try again.')
         return settings, user_id
 
     @zpublish
@@ -365,7 +365,7 @@ No wildcards or private names. Classes already managed by a preset must be confi
 
     def _header(self):
         return '''<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>EnableScripts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>RestrictedPythonExtensions</title>
 <style>
 body{font:15px/1.5 system-ui,sans-serif;background:#f4f6f8;color:#24313f;margin:0}
 main{max-width:1050px;margin:28px auto;padding:0 24px 40px}a{color:#245da2}
@@ -380,16 +380,16 @@ h1{margin-bottom:4px}h3{font-size:14px;margin:16px 0 7px;overflow-wrap:anywhere}
 .warning{padding:16px;background:#fff2ef;border:1px solid #e5aca0;border-radius:6px;margin:18px 0}.warning strong{display:block;margin-bottom:5px}
 .inventory{margin-top:25px}.inventory ul{columns:2}.hint{margin:4px 0 8px 22px}
 </style></head><body><main><a href="../manage_main">← Zope Control Panel</a>
-<h1>EnableScripts</h1><p>Libraries for Script (Python)</p>'''
+<h1>RestrictedPythonExtensions</h1><p>Libraries for Script (Python)</p>'''
 
 
-InitializeClass(EnableScriptsPanel)
+InitializeClass(RestrictedPythonExtensionsPanel)
 
 
 def install_panel():
     """Zope 5's Control Panel replaces the old persistent Products UI."""
-    if not hasattr(ApplicationManager, "EnableScripts"):
-        ApplicationManager.EnableScripts = EnableScriptsPanel()
-    action = "EnableScripts/manage_main"
+    if not hasattr(ApplicationManager, "RestrictedPythonExtensions"):
+        ApplicationManager.RestrictedPythonExtensions = RestrictedPythonExtensionsPanel()
+    action = "RestrictedPythonExtensions/manage_main"
     if not any(item.get("action") == action for item in ApplicationManager.manage_options):
-        ApplicationManager.manage_options += ({"label": "EnableScripts", "action": action},)
+        ApplicationManager.manage_options += ({"label": "RestrictedPythonExtensions", "action": action},)

@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import shutil
 
-MARKER = "# EnableScripts: hubarcode 1.0.0 DataMatrix Python 3 repair v1\n"
+MARKER = "# RestrictedPythonExtensions: hubarcode 1.0.0 DataMatrix Python 3 repair v1\n"
 ORIGINAL_HASHES = {
     "__init__.py": "63d680ce49b15ae50a9bfc804de2ebad885f1fe421a4a076eec55ebb90270f64",
     "placement.py": "a25a1592de2417ce542d06e95db0954f1bea34d4f070ff90c440c3cae9016b82",

@@ -5,13 +5,13 @@ import sys
 from pathlib import Path
 
 from Products.PythonScripts.PythonScript import PythonScript
-from Products.EnableScripts.policy import member_key, object_key, symbol_key
-from Products.EnableScripts.registry import FEATURES
-from Products.EnableScripts.runtime import activate
+from Products.RestrictedPythonExtensions.policy import member_key, object_key, symbol_key
+from Products.RestrictedPythonExtensions.registry import FEATURES
+from Products.RestrictedPythonExtensions.runtime import activate
 
 
 def run(source, **bound):
-    script = PythonScript("enablescripts_probe")
+    script = PythonScript("restrictedpythonextensions_probe")
     script.write(source)
     assert not script.errors, script.errors
     return script._exec(bound, (), {})
@@ -70,7 +70,7 @@ from reportlab.lib.colors import red
 buf = BytesIO()
 im = Image.new('RGB', (200, 100), 'white')
 draw = ImageDraw.Draw(im)
-draw.text((10, 10), 'EnableScripts', font=ImageFont.load_default(), fill='black')
+draw.text((10, 10), 'RestrictedPythonExtensions', font=ImageFont.load_default(), fill='black')
 im = im.resize((400, 200), Image.Resampling.LANCZOS)
 im = ImageOps.mirror(im)
 im = ImageEnhance.Contrast(im).enhance(1.2)
@@ -81,7 +81,7 @@ pdf = BytesIO()
 c = Canvas(pdf, pagesize=A4)
 c.drawImage(ImageReader(im2), 25, 500, 400, 200)
 c.setFillColor(red)
-c.drawString(25, 740, 'EnableScripts: direct Pillow + ReportLab + BytesIO')
+c.drawString(25, 740, 'RestrictedPythonExtensions: direct Pillow + ReportLab + BytesIO')
 t = c.beginText(25, 460)
 t.setFont('Helvetica', 12)
 t.textLine('Generated inside a restricted Zope Python Script.')
@@ -103,7 +103,7 @@ return (im2.size, buf.getvalue(), pdf.getvalue())
         print(json.dumps({"image_size": result[0], "png_bytes": len(result[1]), "pdf_bytes": len(result[2])}))
     elif mode == "helpers":
         activate(("pdf_helpers", "image_helpers", "pillow"))
-        assert run('''from Products.EnableScripts import PdfBuffer, ImageBuffer
+        assert run('''from Products.RestrictedPythonExtensions import PdfBuffer, ImageBuffer
 p = PdfBuffer()
 p.write(b'pdf helper')
 im = ImageBuffer(120, 80)
@@ -134,7 +134,7 @@ styles = getSampleStyleSheet()
 table = Table([['A','B'],['1','2']])
 table.setStyle(TableStyle([('GRID',(0,0),(-1,-1),1,colors.black)]))
 doc = SimpleDocTemplate(b)
-doc.build([Paragraph('EnableScripts', styles['Normal']), Spacer(1,12), table])
+doc.build([Paragraph('RestrictedPythonExtensions', styles['Normal']), Spacer(1,12), table])
 return b.getvalue()[:5]
 ''')
         assert result == b"%PDF-"
@@ -154,7 +154,7 @@ from reportlab.graphics.barcode.ecc200datamatrix import ECC200DataMatrix
 b = BytesIO()
 c = Canvas(b)
 Code128('123456').drawOn(c, 10, 10)
-matrix = ECC200DataMatrix('EnableScripts', x=0, y=0)
+matrix = ECC200DataMatrix('RestrictedPythonExtensions', x=0, y=0)
 matrix.validate()
 matrix.encode()
 matrix.drawOn(c, 10, 100)
@@ -168,7 +168,7 @@ return b.getvalue()[:5]
             def do_GET(self):
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(b'enablescripts-http-test')
+                self.wfile.write(b'restrictedpythonextensions-http-test')
             def log_message(self, *args):
                 pass
         server = HTTPServer(('127.0.0.1', 0), Handler)
@@ -183,7 +183,7 @@ body = response.read()
 status = response.status
 response.close()
 return (body, status, urlencode({{'a': 'b c'}}))
-''') == (b'enablescripts-http-test', 200, 'a=b+c')
+''') == (b'restrictedpythonextensions-http-test', 200, 'a=b+c')
         finally:
             server.shutdown()
             server.server_close()

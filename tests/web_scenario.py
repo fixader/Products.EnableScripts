@@ -39,10 +39,10 @@ debug-exceptions off
 ''')
     app = TestApp(make_wsgi_app({}, str(config)), extra_environ={"x-wsgiorg.throw_errors": False})
     import Zope2
-    from Products.EnableScripts import runtime
-    from Products.EnableScripts.policy import module_groups
-    from Products.EnableScripts.registry import FEATURES
-    from Products.EnableScripts.settings import get_settings
+    from Products.RestrictedPythonExtensions import runtime
+    from Products.RestrictedPythonExtensions.policy import module_groups
+    from Products.RestrictedPythonExtensions.registry import FEATURES
+    from Products.RestrictedPythonExtensions.settings import get_settings
     from scenario import run, denied
 
     if phase == "initial":
@@ -51,15 +51,15 @@ debug-exceptions off
         root_app.acl_users._doAddUser("testreader", "testpassword", [], [])
         transaction.commit()
         root_app._p_jar.close()
-    path = "/Control_Panel/EnableScripts/manage_main"
-    save_path = "/Control_Panel/EnableScripts/manage_save"
+    path = "/Control_Panel/RestrictedPythonExtensions/manage_main"
+    save_path = "/Control_Panel/RestrictedPythonExtensions/manage_save"
     auth = "Basic " + base64.b64encode(b"testmanager:testpassword").decode()
     reader = "Basic " + base64.b64encode(b"testreader:testpassword").decode()
     headers = {"Authorization": auth}
     app.get(path, status=401)
     app.get(path, headers={"Authorization": reader}, status=401)
     page = app.get(path, headers=headers, status=200)
-    assert "EnableScripts" in page.text
+    assert "RestrictedPythonExtensions" in page.text
     assert "no-store" == page.headers["Cache-Control"]
     token = page.html.find("input", {"name": "token"})["value"]
     groups = {key: keys for f in FEATURES.values() for key, (_, keys) in module_groups(f).items()}

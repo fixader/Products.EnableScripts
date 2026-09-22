@@ -3,8 +3,8 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Products.EnableScripts"
-version = "0.2.2"
+name = "Products.RestrictedPythonExtensions"
+version = "0.3.0"
 description = "Expose selected APIs from separately installed libraries to Zope restricted Python scripts."
 readme = "README.en.md"
 requires-python = ">=3.8"
@@ -28,16 +28,16 @@ classifiers = [
 dependencies = ["Zope>=5.8,<7", "Products.PythonScripts>=5,<6"]
 
 [project.urls]
-Homepage = "https://github.com/fixader/Products.EnableScripts"
-Repository = "https://github.com/fixader/Products.EnableScripts"
-Issues = "https://github.com/fixader/Products.EnableScripts/issues"
+Homepage = "https://github.com/fixader/Products.RestrictedPythonExtensions"
+Repository = "https://github.com/fixader/Products.RestrictedPythonExtensions"
+Issues = "https://github.com/fixader/Products.RestrictedPythonExtensions/issues"
 
 [project.optional-dependencies]
 test = ["pytest>=8", "build", "twine", "WebTest", "beautifulsoup4", "Pillow>=10", "reportlab>=4,<4.4.3; python_version < '3.9'", "reportlab>=4,<6; python_version >= '3.9'", "hubarcode==1.0.0", "zxing-cpp; python_version >= '3.9'"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["Products.EnableScripts*"]
+include = ["Products.RestrictedPythonExtensions*", "Products.EnableScripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

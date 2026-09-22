@@ -20,7 +20,7 @@ def choices(feature):
     for path, names in {**feature.classes, **feature.types}.items():
         keys.add(object_key(path))
         keys.update(member_key(path, name) for name in names)
-    keys.update(symbol_key("Products.EnableScripts", name) for name in feature.exports)
+    keys.update(symbol_key("Products.RestrictedPythonExtensions", name) for name in feature.exports)
     return keys
 
 
@@ -35,8 +35,8 @@ def module_groups(feature):
     groups = {module: set(symbol_key(module, name) for name in names)
               for module, names in feature.modules.items()}
     if feature.exports:
-        groups["Products.EnableScripts"] = {
-            symbol_key("Products.EnableScripts", name) for name in feature.exports}
+        groups["Products.RestrictedPythonExtensions"] = {
+            symbol_key("Products.RestrictedPythonExtensions", name) for name in feature.exports}
     for path, names in {**feature.classes, **feature.types}.items():
         module = path.split(":", 1)[0]
         candidates = [name for name in groups if module == name or module.startswith(name + ".")]
